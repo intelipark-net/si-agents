@@ -4,7 +4,7 @@
  "app": "si-agents",
  "base": "/si-agents/preview-panel-5zi9/",
  "agentName": "Running Mayan Woman (Ix Ajaw)",
- "autoListen": true,
+ "autoListen": false,
  "saveVoice": false,
  "tokenCap": 1000000000,
  "agentBackend": "sia-bridge:agent",

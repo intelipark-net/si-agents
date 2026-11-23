@@ -94,16 +94,6 @@
             <span class="sub" data-i18n="nameSub">Si lo dejas vacío, la tarea sale como anónima.</span>
             <input id="sia-name" type="text" data-i18n-ph="namePh" placeholder="Anónimo" autocomplete="name">
           </div>
-          <div class="field">
-            <label for="sia-grupo" data-i18n="grupoL">Tu grupo</label>
-            <span class="sub" data-i18n="grupoSub">Se pregunta una sola vez.</span>
-            <input id="sia-grupo" type="text" data-i18n-ph="grupoPh" placeholder="Ej. 3A" autocomplete="off" maxlength="60">
-          </div>
-          <div class="field">
-            <label for="sia-maestro" data-i18n="maestroL">Tu maestro(a)</label>
-            <span class="sub" data-i18n="maestroSub">Para enviarle el resumen del grupo.</span>
-            <input id="sia-maestro" type="text" data-i18n-ph="maestroPh" placeholder="Nombre del maestro" autocomplete="off" maxlength="80">
-          </div>
           <div class="cta-row">
             <button type="submit" class="cta" id="btnGenerate" data-i18n="cta">Generar tarea</button>
             <p class="fine" id="formError" hidden></p>
@@ -229,6 +219,7 @@
   <div class="busy" id="busy" hidden><div class="busy-card" data-i18n="working">Generando tu tarea…</div></div>
   <button type="button" id="siaRefresh" data-agent-refresh hidden></button>
   <script src="app.js" defer></script>
+  <script src="sia-voice.js" defer></script>
   <script src="sia-agent.js" defer></script>
   <script src="_agent/agent.js" defer data-app="si-agents" data-commands="agent-commands.json" data-menu="agent-menu.json"></script>
 </body>

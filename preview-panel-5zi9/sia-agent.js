@@ -266,8 +266,7 @@
           return { msg: urlErrMsg(r.error), halt: true };
         }) };
       }
-      case 'set_grupo': { s.setGrupo(v ? String(v) : ''); markProfileAsked(); return v ? tr('Tu grupo quedó como ' + v + '.', 'Your group is ' + v + '.') : tr('Sin grupo.', 'No group.'); }
-      case 'set_maestro': { s.setMaestro(v ? String(v) : ''); markProfileAsked(); return v ? tr('Tu maestro(a): ' + v + '.', 'Your teacher: ' + v + '.') : tr('Sin maestro.', 'No teacher.'); }
+      case 'stop_speech': if (window.SIAVoice) SIAVoice.stop(); return '';
       case 'apply_proposal': { s.setPrompt(String(v || '')); guide.step = guide.step ? 'done' : guide.step; pendingOffer = null; return doAction({ type: 'generate' }, ctx); }
       case 'apply_prompt': { s.setPrompt(String(v || '')); pendingOffer = null; return tr('Listo, actualicé el prompt. ¿Genero la tarea?', 'Done, I updated the prompt. Shall I generate the homework?'); }
       case 'suggest_off': try { localStorage.setItem('sia-suggest-off', '1'); } catch (e) { } return tr('Listo, no te haré más sugerencias. Di “activa los avisos” para volver a verlas.', 'Done, no more suggestions. Say “turn suggestions on” to see them again.');
@@ -282,126 +281,39 @@
   }
 
   /* ---------------------------------------------------------------- local parser: es-MX + English, flexible phrasing */
+  /* Local parser: ONLY exact short commands (and deterministic attach-by-name/URL). Everything else goes to Grok with history + state. */
+  var YES = /^(si|sí|yes|ok|okay|dale|va|sale|hazlo|hazlo tu|hazlo tú|por favor|porfa|please|do it|go ahead|claro|adelante|si porfa|si por favor)$/;
+  var DISMISS = /^(no|nel|luego|ahora no|not now|no thanks|no gracias|despues|later|dejarla asi|keep mine)$/;
   function localParse(raw) {
-    var t = String(raw || '').trim(), f = fold(t), s = SIA();
+    var t = String(raw || '').trim(), f = fold(t).replace(/[.!¡¿?]+/g, '').trim();
     if (/\bxai-[A-Za-z0-9]{10,}/.test(t)) return [{ type: 'connect_key' }];   // never echo or forward a pasted key
-    if (/^(prefiero voz|quiero voz|usar voz|voice|i want voice)$/.test(f)) return [{ type: 'choose_voice' }];
-    if (/^(prefiero texto|quiero texto|usar texto|text|type|i want text|escribir)$/.test(f)) return [{ type: 'choose_text' }];
-    if (pendingOffer && /^(si|sí|yes|ok|okay|dale|va|hazlo|hazlo tu|hazlo tú|por favor|please|do it|go ahead|claro)$/.test(f)) {
-      var act = pendingOffer; pendingOffer = null; return [act];
-    }
-    if (/^(no|nel|luego|ahora no|not now|no thanks|no gracias|dejarla asi|keep mine)$/.test(f) && (pendingOffer || guide.step !== 'confirm')) { pendingOffer = null; return [{ type: 'help', value: tr('De acuerdo, aquí estoy cuando quieras.', 'All right, I am here when you want.') }]; }
+    if (/^(prefiero (la )?voz|quiero (la )?voz|usar voz|con voz|modo voz|voz|voice|i want voice|use voice|voice mode)$/.test(f)) return [{ type: 'choose_voice' }];
+    if (/^(prefiero (el )?texto|prefiero escribir|quiero (el )?texto|usar texto|solo texto|nada mas texto|sin voz|modo texto|texto|text|text only|i want text|no voice|escribir)$/.test(f)) return [{ type: 'choose_text' }];
+    if (pendingOffer && YES.test(f)) { var act = pendingOffer; pendingOffer = null; return [act]; }
+    if (pendingOffer && DISMISS.test(f)) { pendingOffer = null; return [{ type: 'help', value: tr('De acuerdo, aquí estoy cuando quieras.', 'All right, I am here when you want.') }]; }
     if (/^(no mas avisos|no mas sugerencias|desactiva los avisos|no more suggestions|turn suggestions off)$/.test(f)) return [{ type: 'suggest_off' }];
     if (/^(activa los avisos|activa las sugerencias|turn suggestions on)$/.test(f)) return [{ type: 'suggest_on' }];
-    if (/^(quiero cambiar la tarea|cambiar la tarea|change the task)$/.test(f)) return [{ type: 'start_prompt_dictation' }];
-    var guided = guidedParse(t, f, s);
-    if (guided) return guided;
-    // several actions in one sentence ("adjunta X, hazla con Y y mándala por WhatsApp") -> Grok chains them with full state
-    var fams = [/\b(adjunta|adjuntar|sube|subir|carga|cargar|attach|upload)\b/, /\b(haz|hazla|hazlo|genera|generala|elabora|elaborala|crea|creala|make|generate|create|do it)\b/, /\b(manda|mandala|mandalo|mandame|envia|enviala|compartela|comparte|share|send)\b/, /\b(pon|cambia|escribe|usa)\b.*\b(prompt|nombre|grupo|maestro)\b/];
-    if (f.split(' ').length >= 5 && /(,| y | luego | despues | then | and )/.test(' ' + f + ' ') && fams.filter(function (r) { return r.test(f); }).length >= 2) return null;
-    // profile: grupo / maestro
-    var gm = /^(?:mi grupo es|soy del grupo|estoy en el grupo|my group is|i am in group)\s+([A-Za-z0-9\-\.]{1,30})\s*$/i.exec(t);
-    if (gm) return [{ type: 'set_grupo', value: gm[1] }];
-    var tm = /^(?:mi (?:maestro|maestra|profesor|profesora|docente) es|my teacher is)\s+(.{2,60})$/i.exec(t);
-    if (tm) return [{ type: 'set_maestro', value: stripLead(tm[1]) }];
-    // attach by URL (Drive / web) or by file name; chained sentences go to Grok
-    var CHAIN = /(,| y (haz|genera|crea|elabora|mand|compart|envia|hazla|hazlo)|\bthen\b|\band (make|generate|send|share|create))/;
-    var um = /(https?:\/\/\S+)/i.exec(t);
-    if (um && /(adjunta|adjuntar|sube|subir|usa|usar|descarga|baja|agrega|carga|toma|attach|upload|use|download|add|load|fetch)/.test(f) && !CHAIN.test(t.replace(um[1], ''))) return [{ type: 'attach_file', value: um[1].replace(/[.,;)]+$/, '') }];
-    var nmAtt = /^(?:por favor |please )?(?:sube|subir|adjunta|adjuntar|agrega|agregar|anade|carga|cargar|usa|usar|attach|upload|add|use|load)\s+(?:el |la |mi |los |las |the |my )?(?:archivo|file|documento|document)\s+["“']?(.+?)["”']?\s*$/i.exec(t);
-    if (nmAtt && !CHAIN.test(t)) return [{ type: 'attach_file', value: stripLead(nmAtt[1]) }];
-    var nmAtt2 = /^(?:por favor |please )?(?:adjunta|adjuntar|attach)\s+(?:el |la |mi |the |my )?(?!archivos?\b|files?\b|foto|imagen|image)(.{3,60})$/i.exec(t);
-    if (nmAtt2 && !CHAIN.test(t)) return [{ type: 'attach_file', value: stripLead(nmAtt2[1]) }];
-    // dictation follow-up
-    if (pending === 'prompt' && !/^(cancela|cancel|olvidalo|never mind)/.test(f)) { pending = null; return [{ type: 'set_prompt', value: t }]; }
-    var DISMISS = /^(ahora no|no gracias|no|nel|luego|despues|not now|no thanks|later)$/;
-    if (pending === 'name' && DISMISS.test(f)) { pending = null; }
-    else if (pending === 'name') { pending = null; if (/^(sin nombre|anonim[oa]|anonymous)$/.test(f)) return [{ type: 'set_name', value: '' }]; return [{ type: 'set_name', value: t.replace(/^(me llamo|mi nombre es|my name is|soy)\s+/i, '') }]; }
+    if (pending === 'prompt' && !/^(cancela|cancel|olvidalo|never mind)$/.test(f)) { pending = null; if (f.split(' ').length >= 2) return [{ type: 'set_prompt', value: t }]; }
     pending = null;
-    var Q = /^(como|como puedo|como hago|como se|que hago|donde|how|how do|how can|what is|que es|que son|para que|por que|why|puedo|can i|se puede|explica|explain)\b/;
-    // help
-    if (/^(lista de comandos|comandos|list commands|commands|command list|que comandos hay|que puedo decir|what can i say)$/.test(f)) return [{ type: 'help' }];
-    if (/^(help|ayuda|ayudame|auxilio|que puedes hacer|que sabes hacer|what can you do|what can i say|instrucciones|tutorial|como funciona|como se usa|how does (this|it) work|how do i use (this|the app)|guia|guide)$/.test(f)) return [{ type: 'help' }];
-    if (/(cuantas|cuantos|how many|me quedan|quedan|left|remaining)/.test(f) && !/(how do|how can|como (puedo|hago|se))/.test(f) && f.split(' ').length <= 10) return [{ type: 'show_meter' }];
-    if (/(configuracion|ajustes|settings|config|que modelo|which model|what model)\b/.test(f) && f.split(' ').length <= 8 && !/(cambia|change|como|how)/.test(f)) return [{ type: 'status' }];
-    if (Q.test(f) || /\b(ayuda con|help (me )?with)\b/.test(f) || /^(que es esta app|que es esto|what is this app|que hago primero|what should i do first)$/.test(f)) {
-      return null; // Grok answers with the full guide; local help is the fallback
-    }
-    // pasted key / connect
-    if (/(conect|connect|usar|use|poner|pon|agrega|add).*(mi |my |propia |own )?(clave|llave|key|api key|propio agente|own agent)/.test(f) && !/(quita|borra|elimina|remove|delete|forget)/.test(f)) return [{ type: 'connect_key' }];
-    if (/(quita|borra|elimina|olvida|remove|delete|forget).*(clave|llave|key)/.test(f)) return [{ type: 'remove_key' }];
-    // palettes
-    var palWord = /(paleta|paletas|palette|palettes|colores|colors|colours|tema|theme)\b/.test(f);
-    var styleAttr = /(fondo|background|botones|buttons|panel|acento|accent|bordes|borders)\b/.test(f) && /(oscur|clar|dark|light|#[0-9a-f]{6}|\b(verde|green|dorad|oro|gold|azul|blue|rojo|red|negro|black|blanco|white|morado|purple|turquesa|teal|naranja|orange|rosa|pink|gris|gray|grey|amarill|yellow|cafe|brown|marino|navy|crema|cream|vino|coral|jade|esmeralda|emerald|oliva|olive)\b)/.test(f);
-    if (palWord || styleAttr) {
-      if (/(que|cuales|lista|list|muestra|show|ver|see|which|what).*(paletas|palettes)/.test(f) || /^(paletas|palettes)$/.test(f)) return [{ type: 'list_palettes' }];
-      if (/(borra|elimina|quita|delete|remove)/.test(f)) { var dn = t.replace(/^.*?(paleta|palette)\s*/i, ''); return [{ type: 'delete_palette', value: dn }]; }
-      var creating = /(crea|crear|creame|haz|hazme|construye|arma|disena|nueva|nuevo|personaliza|make|create|build|design|new|custom|my own|propia|mia)/.test(f) || (styleAttr && !/(usa|use|cambia a|switch to|pon la|set the palette|selecciona|elige|pick|choose)\b/.test(f));
-      if (creating && styleAttr) {
-        var spec = parsePaletteSpec(t, s.activePalette());
-        if (spec) return [{ type: 'create_palette', palette: spec, make_default: !/(sin aplicar|no la apliques|don.?t apply|without applying)/.test(f) }];
-        return null;   // Grok builds it
-      }
-      if (creating) return null;   // "create a palette that feels like the sea at night" → Grok builds it
-      var pals = s.palettes(), hit = null, best = 0;
-      pals.forEach(function (p) {
-        var fn = fold(p.name), words = fn.replace(/\b(si agents|estilo|de|paleta|la|el)\b/g, ' ').split(' ').filter(function (w) { return w.length >= 4; });
-        var sc = f.indexOf(fn) >= 0 ? 100 : words.filter(function (w) { return f.indexOf(w) >= 0; }).length / Math.max(1, words.length);
-        if (sc > 0 && sc >= best) { best = sc; hit = p; }   // ties go to the later (custom) palette
-      });
-      if (hit && best >= 0.5) return [{ type: 'set_palette', value: hit.id }];
-      if (/(defecto|default|original|predeterminad|reset|restablece)/.test(f)) return [{ type: 'set_palette', value: 'verde-selva' }];
-      if (hit) return [{ type: 'set_palette', value: hit.id }];
-      return [{ type: 'list_palettes' }];
-    }
-    // style sheet
-    if (/(hoja de estilo|style ?sheet)/.test(f)) {
-      if (/(defecto|default|original|restablece|reset|quita|remove)/.test(f)) return [{ type: 'reset_style' }];
-      return [{ type: 'open_style_picker' }];
-    }
-    if (/(abre|abrir|ver|muestra|open|show|see|view)\b.*\b(pdf|resultado|result)\b/.test(f) && !/(archivo|archivos|file|files|selector|picker|sube|subir|upload|adjunt|attach)/.test(f)) return [{ type: 'open_pdf' }];
-    // paste
-    if (/^(pega|pegar|paste|pega el archivo|pega la captura|paste the (file|screenshot|image)|paste it)$/.test(f) || /^(pega|paste)\b/.test(f) && f.split(' ').length <= 6) return [{ type: 'paste_files' }];
-    // files
-    if (/(quita|borra|elimina|limpia|clear|remove|delete)\s+(todos|todas|all)\s+(los |las |the )?(archivos|files)/.test(f) || /^(quita todos|clear all|remove all files)$/.test(f)) return [{ type: 'clear_files' }];
-    var rm = /(?:quita|borra|elimina|saca|remove|delete)\s+(?:el |la |los |las |the )?(?:archivo|file)?\s*["“']?(.+?)["”']?\s*$/i.exec(t);
-    if (rm && !/todos|todas|all files/.test(f) && stripLead(rm[1]).length > 1 && !/prompt|clave|key|nombre|name/.test(fold(rm[1]))) return [{ type: 'remove_file', value: stripLead(rm[1]) }];
-    if (/(quita|borra|elimina|limpia|clear|remove|delete).*(archivos|archivo|files|file|adjuntos)/.test(f) && /todos|all/.test(f)) return [{ type: 'clear_files' }];
-
-    if (/(sub|carg|adjunt|agreg|anad|abr|selecciona|elige|busca|upload|attach|add|load|open|choose|pick|select|browse).*(archivo|archivos|file|files|documento|documentos|document|foto|fotos|photo|imagen|imagenes|image|images|pdf|excel|word)/.test(f) || /^(archivos|files|subir|upload)$/.test(f)) return [{ type: 'open_file_picker' }];
-    // prompt
-    if (/^(dicta|dictar|dictate|voy a dictar|i will dictate|quiero dictar)\b.*(prompt|instruccion|consigna)?$/.test(f) && !/(:)/.test(t)) {
-      if (/(nombre|name)/.test(f)) { pending = 'name'; return [{ type: 'help', value: tr('Te escucho: di tu nombre.', 'Go ahead: say your name.') }]; }
-      return [{ type: 'start_prompt_dictation' }];
-    }
-    if (/(borra|limpia|quita|clear|erase|delete).*(prompt|instrucciones)/.test(f)) return [{ type: 'clear_prompt' }];
-    var pm = /^(?:(?:por favor|please)\s+)?(?:(escribe|pon|ponle|dicta|cambia|establece|redacta|agrega|anade|añade|suma|write|type|set|put|change|add|append)\s+)?(?:(?:en|a|al|to|in|into)\s+)?(?:(?:el|la|the|my|mi)\s+)?(?:prompt|instrucciones?|consigna)\s*(?:(?:es|sea|como|que diga|diciendo|a|to|is|as|says|saying|with|con)\b)?\s*[:=,\-–]?\s*([\s\S]+)$/i.exec(t);
-    if (pm && stripLead(pm[2]).length > 2) {
-      var verb = fold(pm[1] || ''), body = stripLead(pm[2]);
-      return [{ type: 'set_prompt', value: body, append: /^(agrega|anade|añade|suma|add|append)$/.test(verb) }];
-    }
-    // name
-    if (/^(sin nombre|anonimo|anonima|anonymous|no name|borra (mi|el) nombre|clear (my|the) name|quita (mi|el) nombre)$/.test(f)) return [{ type: 'set_name', value: '' }];
-    var nmx = /^(?:(?:hola|hi|hello)[, ]+)?(?:mi nombre es|me llamo|my name is|call me|llamame|(?:pon|ponle|ponme)\s+(?:de|como)\s+nombre|nombre\s*[:=]|name\s*[:=]|(?:pon|ponle|cambia|set|change|put)\s+(?:mi |el |my |the )?(?:nombre|name)\s*(?:a|como|en|to|as)?\s*:?)\s*(.{2,60})$/i.exec(t);
-    if (nmx) return [{ type: 'set_name', value: stripLead(nmx[1]).replace(/[.!]+$/, '') }];
-    // language (long sentences the native matcher does not cover)
-    if (/(idioma|language|lengua|habla|speak|talk|cambia|switch|pon|change).*(ingles|english)/.test(f)) return [{ type: 'set_language', value: 'en' }];
-    if (/(idioma|language|lengua|habla|speak|talk|cambia|switch|pon|change).*(espanol|spanish|castellano)/.test(f)) return [{ type: 'set_language', value: 'es' }];
-    // list / main / pdf
-    if (/(mis tareas|mis pdfs|my homework|my tasks|my pdfs|lista de tareas|historial|history|tareas anteriores|previous homework|ver (las |mis )?tareas|show (my )?homework|tareas hechas)/.test(f)) return [{ type: 'open_list' }];
-    if (/^(nueva tarea|new homework|inicio|home|pantalla principal|main screen|regresa|regresar|volver|vuelve|atras|back|go back)( .*)?$/.test(f) && f.split(' ').length <= 5) return [{ type: 'show_main' }];
-    if (/(abre|abrir|ver|muestra|open|show|see).*(el |the )?(pdf|resultado|result)\b/.test(f)) return [{ type: 'open_pdf' }];
-    // share before generate ("envía la tarea")
-    if (/(compart|share|whatsapp|wasap|whats|manda|envia|send)/.test(f)) return [{ type: 'share' }];
-    if (/(genera|generar|generala|crea la tarea|crear la tarea|haz la tarea|hazla|haz el pdf|arma el pdf|elabora la tarea|resuelve|generate|create the homework|make the homework|make the pdf|build the pdf|do the homework|run it|go ahead|adelante|dale)/.test(f)) return [{ type: 'generate' }];
-    if (/(importa|import|carga|load).*(lista|list|estudiantes|alumnos|students|maestros|directorio)/.test(f) || /^(importa la lista de estudiantes)$/.test(f)) return [{ type: 'import_students' }];
-    if (/(ya me aprobaron|me aprobaron|ya me la aprobaron|was i approved|am i approved|did they approve|request status|estado de mi solicitud)/.test(f)) return [{ type: 'request_status' }];
-    if (/(quiero mas tareas|pide mas tareas|pedir mas tareas|request more|need more homework|mas tareas gratis|aumenta (el|mi) (limite|cupo))/.test(f) || /^(pedir mas tareas|request more homeworks)$/.test(f)) return [{ type: 'request_more' }];
-    // meter / status
-    if (/(cuantas|cuantos|how many|me quedan|quedan|left|remaining|contador|counter|limite|limit|gratis|free)/.test(f) && f.split(' ').length <= 10) return [{ type: 'show_meter' }];
-    if (/^(estado|status|configuracion|config|ajustes|settings|que modelo|which model|what model)( .*)?$/.test(f)) return [{ type: 'status' }];
-    if (/(silencia|mute|sin voz|apaga la voz|voice off|no hables)/.test(f)) return [{ type: 'mute', value: true }];
-    if (/(activa la voz|enciende la voz|unmute|voice on|habla otra vez|con voz)/.test(f)) return [{ type: 'mute', value: false }];
+    if (/^(cierra|cierra el panel|cerrar|close|close the panel)$/.test(f)) return [{ type: 'close_panel' }];
+    if (/^(silencio|callate|calla|deja de hablar|stop|be quiet|shut up)$/.test(f)) return [{ type: 'stop_speech' }];
+    if (/^(mis tareas|ver mis tareas|my homework)$/.test(f)) return [{ type: 'open_list' }];
+    if (/^(nueva tarea|new homework)$/.test(f)) return [{ type: 'show_main' }];
+    if (/^(pega|pegar|paste|pegalo|pega el archivo|pega la captura|paste it)$/.test(f)) return [{ type: 'paste_files' }];
+    if (/^(sube archivos?|subir archivos?|elegir archivo|elige archivo|choose file|upload( a)? file)$/.test(f)) return [{ type: 'open_file_picker' }];
+    if (/^(genera|generar|genera la tarea|generala|generate)$/.test(f)) return [{ type: 'generate' }];
+    if (/^(abre el pdf|abrir pdf|abre pdf|ver pdf|open pdf|open the pdf)$/.test(f)) return [{ type: 'open_pdf' }];
+    if (/^(comparte|compartir|whatsapp|mandalo por whatsapp|mandala por whatsapp|share)$/.test(f)) return [{ type: 'share' }];
+    if (/^(quita (todos )?los archivos|borra los archivos|quitar todos|clear files)$/.test(f)) return [{ type: 'clear_files' }];
+    if (/^(espanol|en espanol|cambia a espanol)$/.test(f)) return [{ type: 'set_language', value: 'es' }];
+    if (/^(english|in english|cambia a ingles|switch to english)$/.test(f)) return [{ type: 'set_language', value: 'en' }];
+    if (/^(lista de comandos|comandos|list commands|commands)$/.test(f)) return [{ type: 'help' }];
+    // attach by URL (Drive / web) or by explicit file name; anything chained goes to Grok
+    var CHAIN = /(,| y (haz|genera|crea|elabora|mand|compart|envia|hazla|hazlo)|\bthen\b|\band (make|generate|send|share|create))/i;
+    var um = /(https?:\/\/\S+)/i.exec(t);
+    if (um && /^(adjunta|adjuntar|sube|subir|usa|usar|descarga|agrega|carga|attach|upload|use|download|add|load|fetch)\b/.test(f) && !CHAIN.test(t.replace(um[1], ''))) return [{ type: 'attach_file', value: um[1].replace(/[.,;)]+$/, '') }];
+    var nmAtt = /^(?:por favor |please )?(?:sube|subir|adjunta|adjuntar|agrega|carga|attach|upload|add)\s+(?:el |la |mi |the |my )?(?:archivo|file|documento|document)\s+["“']?(.+?)["”']?\s*$/i.exec(t);
+    if (nmAtt && !CHAIN.test(t)) return [{ type: 'attach_file', value: stripLead(nmAtt[1]) }];
     return null;
   }
 
@@ -417,6 +329,7 @@
         var a = list[i++], r;
         var ctx = { wait: i < list.length };   // chained steps after this one: generate waits for the PDF
         try { r = doAction(a, ctx); } catch (e) { r = tr('No pude hacer eso.', 'I could not do that.'); }
+        if (prefix && QUIET[a.type] && typeof r === 'string') r = '';   // Grok already said it
         if (r && r.async) {
           r.async.catch(function () { return tr('El servidor no respondió.', 'The server did not answer.'); }).then(function (x) {
             var halt = false;
@@ -433,7 +346,7 @@
   function respond(obj) { return new Response(JSON.stringify(obj), { status: 200, headers: { 'Content-Type': 'application/json' } }); }
   function snapshot() {
     var s = SIA();
-    return { view: s.view(), lang: L(), name: s.name(), grupo: s.grupo(), maestro: s.maestro(), prompt: s.prompt().slice(0, 400), files: s.files(),
+    return { view: s.view(), lang: L(), name: s.name(), prompt: s.prompt().slice(0, 400), files: s.files(),
       filesInfo: s.fileInfo(), palette: s.activePalette(),
       palettes: s.palettes().map(function (p) { return { id: p.id, name: p.name }; }), meter: s.meter(), hasResult: !!s.lastResult(),
       guide: { step: guide.step, mode: guide.mode }, homework: s.homework() };
@@ -450,7 +363,7 @@
     }
     // Grok through the backend
     var s = SIA();
-    return s.api('agent', { text: text.slice(0, 800), lang: L(), browserId: s.browserId(), state: snapshot() }).then(function (j) {
+    return s.api('agent', { text: text.slice(0, 800), lang: L(), browserId: s.browserId(), state: snapshot(), history: history.slice(-10) }).then(function (j) {
       var acts2 = Array.isArray(j.actions) ? j.actions : [];
       if (j.offer_action) pendingOffer = { type: j.offer_action, value: j.offer_value };
       var prefix = String(j.reply || '');
@@ -536,22 +449,32 @@
     var form = document.getElementById('formError');
     new MutationObserver(function () { if (agentGenerated && !form.hidden && form.textContent) { agentGenerated = false; say(form.textContent); } }).observe(form, { attributes: true, childList: true, characterData: true, subtree: true });
   }
-  // a reply outside a command (drop, PDF ready): same bubble classes + same TTS rules as agent.js (es-MX / en-US, mute respected)
-  function speak(text) {
-    var muted = false; try { muted = localStorage.getItem('le-agent-mute') === '1'; } catch (e) { }
-    if (!muted && window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = L() === 'en' ? 'en-US' : 'es-MX'; speechSynthesis.speak(u); } catch (e) { }
-    }
-    window.dispatchEvent(new CustomEvent('le-agent:say', { detail: { text: text, spoken: !muted, lang: L(), source: 'sia' } }));
+  // replies outside a Grok turn (drop, PDF ready, guide): bubble + cloud voice (SIAVoice respects Texto mode and mute)
+  function voiceOn() { return !!(window.SIAVoice && SIAVoice.mode() === 'voice' && localStorage.getItem('le-agent-mute') !== '1'); }
+  function speak(text, opts) {
+    window.dispatchEvent(new CustomEvent('le-agent:say', { detail: { text: text, spoken: voiceOn(), lang: L(), source: 'sia' } }));
+    if (!window.SIAVoice) return Promise.resolve(false);
+    return SIAVoice.speak(text, opts).then(function (played) {
+      // voice mode: after a question, listen again (the student just answers)
+      if (played && /\?\s*$/.test(String(text)) && voiceOn() && window.LEAgent && LEAgent.isOpen() && !SIAVoice.listening()) micTurn();
+      return played;
+    });
   }
-  function say(text) {
-    var log = document.querySelector('#lea-root .lea-log');
-    if (log) { var d = document.createElement('div'); d.className = 'lea-msg lea-a'; d.setAttribute('data-who', 'a'); d.setAttribute('data-cmd', 'sia'); d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; }
-    speak(text);
+  function logEl() { return document.querySelector('#lea-root .lea-log'); }
+  function bubble(who, text, extra) {
+    var log = logEl(); if (!log) return null;
+    var d = document.createElement('div'); d.className = 'lea-msg lea-' + who + (extra && extra.err ? ' lea-err' : ''); d.setAttribute('data-who', who); d.setAttribute('data-cmd', 'sia');
+    if (extra && extra.voice) d.setAttribute('data-voice', '1');
+    d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight;
+    return d;
   }
-  // a reply with buttons: each button runs its data-run text through the panel like a typed command
+  function say(text, opts) {
+    bubble('a', text, opts); pushHist('assistant', text);
+    return speak(text, opts);
+  }
+  // a reply with buttons: each button runs its data-run text through the same chat turn
   function sayButtons(text, buttons) {
-    var log = document.querySelector('#lea-root .lea-log');
+    var log = logEl();
     if (log) {
       var d = document.createElement('div'); d.className = 'lea-msg lea-a'; d.setAttribute('data-who', 'a'); d.setAttribute('data-cmd', 'sia');
       var tx = document.createElement('div'); tx.textContent = text; d.appendChild(tx);
@@ -563,9 +486,105 @@
       });
       d.appendChild(o); log.appendChild(d); log.scrollTop = log.scrollHeight;
     }
+    pushHist('assistant', text);
     speak(text);
   }
-  window.addEventListener('le-agent:ready', function () { if (!watchMeter()) setTimeout(watchMeter, 300); wirePanel(); setTimeout(bootGuide, 400); });
+
+  /* ---- conversation history (last turns go to Grok with every message) */
+  var history = [];
+  try { history = JSON.parse(sessionStorage.getItem('sia-hist') || '[]') || []; } catch (e) { history = []; }
+  function pushHist(role, text) {
+    text = String(text || '').trim(); if (!text) return;
+    history.push({ role: role, text: text.slice(0, 500) }); history = history.slice(-20);
+    try { sessionStorage.setItem('sia-hist', JSON.stringify(history)); } catch (e) { }
+  }
+  function errText(e) {
+    var m = String(e && e.message || e || '');
+    if (/agent_daily_limit/.test(m)) return tr('Hoy ya usaste todas las respuestas del asistente en este navegador. Vuelve mañana o conecta tu propia clave.', 'You used all assistant replies for today in this browser. Come back tomorrow or connect your own key.');
+    if (/Failed to fetch|NetworkError|network|Load failed|timeout/i.test(m)) return tr('No pude conectar con el servidor. Revisa tu internet e inténtalo otra vez.', 'I could not reach the server. Check your internet and try again.');
+    return tr('Tuve un problema para responder (' + m.slice(0, 60) + '). Inténtalo otra vez en un momento.', 'I had a problem answering (' + m.slice(0, 60) + '). Please try again in a moment.');
+  }
+  var QUIET = { set_name: 1, set_prompt: 1, set_language: 1, choose_voice: 0, choose_text: 0, clear_prompt: 1, stop_speech: 1 };
+  var turnBusy = false;
+  // one chat turn: typed text, a data-run button or a transcript
+  function chatTurn(text, source) {
+    text = String(text || '').trim(); if (!text || !SIA()) return Promise.resolve();
+    if (window.SIAVoice) SIAVoice.stop();
+    bubble('u', text, { voice: source === 'voice' });
+    var s = SIA(), hist = history.slice(-10);
+    pushHist('user', text);
+    var acts = null; try { acts = localParse(text); } catch (e) { acts = null; }
+    if (acts) {   // synchronous first step, still inside the user's gesture (file picker / WhatsApp may open)
+      return runActions(acts).then(function (out) { if (out) say(out); });
+    }
+    var wait = bubble('a', tr('Pensando…', 'Thinking…')); if (wait) wait.classList.add('lea-thinking');
+    turnBusy = true;
+    return s.api('agent', { text: text.slice(0, 800), lang: L(), browserId: s.browserId(), state: snapshot(), history: hist, tts: voiceOn() }).then(function (j) {
+      if (wait) wait.remove();
+      var acts2 = Array.isArray(j.actions) ? j.actions : [];
+      if (j.offer_action) pendingOffer = { type: j.offer_action, value: j.offer_value };
+      var prefix = String(j.reply || '');
+      if (j.offer_action && prefix && !/\?\s*$/.test(prefix)) prefix += ' ' + tr('¿Quieres que lo haga por ti?', 'Want me to do it for you?');
+      return runActions(acts2, prefix).then(function (out) {
+        turnBusy = false;
+        out = out || prefix || tr('¿Me lo dices de otra forma?', 'Could you say it another way?');
+        bubble('a', out); pushHist('assistant', out);
+        window.dispatchEvent(new CustomEvent('sia:reply', { detail: { text: out, source: 'grok', actions: acts2.map(function (a) { return a.type; }) } }));
+        return speak(out, { first: j.audio ? { audio: j.audio, mime: j.audioMime, text: j.audioText } : null });
+      });
+    }).catch(function (e) {
+      turnBusy = false;
+      if (wait) wait.remove();
+      var msg = errText(e);
+      bubble('a', msg, { err: true });
+      window.dispatchEvent(new CustomEvent('sia:reply', { detail: { text: msg, source: 'error', error: String(e && e.message || e) } }));
+      speak(msg);
+    });
+  }
+  // voice turn: record -> cloud STT -> transcript bubble -> chatTurn
+  function micTurn() {
+    if (!window.SIAVoice || !SIAVoice.canRecord()) { say(tr('Tu navegador no permite grabar audio. Escribe tu mensaje.', 'Your browser cannot record audio. Please type.')); return; }
+    if (SIAVoice.listening()) { SIAVoice.stopListening(); return; }
+    SIAVoice.listen().then(function (r) {
+      if (r && r.text) return chatTurn(r.text, 'voice');
+      if (r && r.error && !/cancelled|already|no_speech|mic_denied/.test(r.error)) bubble('a', tr('No pude transcribir el audio. Inténtalo otra vez o escribe.', 'I could not transcribe the audio. Try again or type.'), { err: true });
+      if (r && r.text === '') bubble('a', tr('No te entendí. ¿Me lo repites?', 'I did not catch that. Say it again?'));
+    });
+  }
+  // take over agent.js input: form submit, data-run buttons, mic, "type instead" (capture phase; agent.js stays byte-identical)
+  document.addEventListener('submit', function (e) {
+    var form = e.target && e.target.closest && e.target.closest('#lea-root .lea-form'); if (!form) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var inp = form.querySelector('.lea-in'); var v = inp ? inp.value : '';
+    if (inp) inp.value = '';
+    chatTurn(v, 'text');
+  }, true);
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target : null; if (!t) return;
+    var run = t.closest('#lea-root button[data-run]');
+    if (run) { e.preventDefault(); e.stopImmediatePropagation(); chatTurn(run.getAttribute('data-run'), 'button'); return; }
+    var mic = t.closest('#lea-root .lea-mic');
+    if (mic) { e.preventDefault(); e.stopImmediatePropagation(); micTurn(); return; }
+    var typ = t.closest('#lea-root .lea-type, #lea-root .lea-lstop');
+    if (typ && window.SIAVoice && SIAVoice.listening()) { e.preventDefault(); e.stopImmediatePropagation(); SIAVoice.cancelListening(); var i = document.querySelector('#lea-root .lea-in'); if (i) i.focus(); }
+  }, true);
+  window.addEventListener('sia:mode', function (e) {
+    var root = document.getElementById('lea-root'); if (!root) return;
+    var mic = root.querySelector('.lea-mic'); if (mic) mic.hidden = e.detail.mode === 'text';
+  });
+  window.addEventListener('le-agent:ready', function () { if (!watchMeter()) setTimeout(watchMeter, 300); wirePanel(); dropLeHello(); setTimeout(bootGuide, 400); });
+  // agent.js greets "¡Hola! ¿En qué te ayudo?" on an empty log; our guide greets instead
+  function dropLeHello() {
+    var log = logEl(); if (!log) return;
+    log.querySelectorAll('.lea-msg.lea-a').forEach(function (m) { if (/^(¡Hola! ¿En qué te ayudo\?|Hi! How can I help\?)$/.test(m.textContent.trim())) m.remove(); });
+    var mic = document.querySelector('#lea-root .lea-mic'); if (mic && window.SIAVoice) mic.hidden = SIAVoice.mode() === 'text';
+  }
+  // voice mode: opening the panel (a tap) starts listening once the guide has greeted
+  document.addEventListener('click', function (e) {
+    var l = e.target && e.target.closest && e.target.closest('.lea-launch, .lea-handle');
+    if (!l || !voiceOn()) return;
+    setTimeout(function () { if (window.LEAgent && LEAgent.isOpen() && !SIAVoice.listening() && !SIAVoice.speaking() && !turnBusy) micTurn(); }, 500);
+  });
 
   function offerFor(f) {
     if (/archivo|file|subir|upload|pega|paste/.test(f)) return { type: 'open_file_picker' };
@@ -578,102 +597,32 @@
   function onFilesArrived(n) {
     say(tr('Agregué ' + n + ' archivo(s) a la tarea.', 'Added ' + n + ' file(s) to the homework.'));
   }
+  function greeting() {
+    var s = SIA(), n = s && s.name();
+    if (n) return tr('¡Hola, ' + n.split(' ')[0] + '! Pásame el archivo de tu tarea: pégalo, súbelo o dime su nombre.', 'Hi, ' + n.split(' ')[0] + '! Send me your homework file: paste it, upload it or tell me its name.');
+    return tr('¡Hola! Soy tu tutora de SI Agents. ¿Cómo te llamas?', 'Hi! I am your SI Agents tutor. What is your name?');
+  }
   function startGuide(mode, direct) {
-    guide.mode = mode; guide.step = 'intro';
-    try { localStorage.setItem('sia-guide-mode', mode); sessionStorage.setItem('sia-guide-started', '1'); } catch (e) {}
-    if (mode === 'text') {
-      try { sessionStorage.setItem('le-agent-micblocked', '1'); } catch (e2) {}
-    }
-    var msg = tr('¡Hola! Soy Ix Ajaw. ¿Cómo te llamas? ¿Qué tarea traes hoy?', 'Hi! I am Ix Ajaw. What is your name? What homework are you bringing today?');
+    guide.mode = mode; guide.step = SIA() && SIA().name() ? 'file' : 'name';
+    if (window.SIAVoice) SIAVoice.setMode(mode);
+    try { sessionStorage.setItem('sia-guide-started', '1'); } catch (e) { }
+    var pre = direct ? '' : (mode === 'text' ? tr('Listo, modo texto: no usaré voz ni micrófono. ', 'Done, text mode: no voice and no microphone. ') : tr('Listo, modo voz. ', 'Done, voice mode. '));
+    var msg = pre + greeting();
     if (direct) say(msg);
     return msg;
   }
   function bootGuide() {
-    var mode = null; try { mode = localStorage.getItem('sia-guide-mode'); } catch (e) {}
-    var started = false; try { started = sessionStorage.getItem('sia-guide-started') === '1'; } catch (e2) {}
+    var mode = window.SIAVoice ? SIAVoice.mode() : '';
+    var started = false; try { started = sessionStorage.getItem('sia-guide-started') === '1'; } catch (e2) { }
     if (started) { guide.mode = mode || ''; return; }
     if (mode === 'voice' || mode === 'text') { startGuide(mode, true); return; }
-    var q = tr('Hola, soy Ix Ajaw. ¿Prefieres voz o texto?', 'Hi, I am Ix Ajaw. Would you like voice or text?');
-    sayButtons(q, [{ label: tr('Voz', 'Voice'), run: 'prefiero voz' }, { label: tr('Texto', 'Text'), run: 'prefiero texto' }]);
+    guide.step = 'choose';
+    sayButtons(tr('¡Hola! Soy tu tutora de SI Agents. ¿Prefieres voz o texto?', 'Hi! I am your SI Agents tutor. Would you like voice or text?'),
+      [{ label: tr('🎤 Voz', '🎤 Voice'), run: 'prefiero voz' }, { label: tr('⌨️ Texto', '⌨️ Text'), run: 'prefiero texto' }]);
   }
 
-  /* ---- guided conversation: name/task -> grupo -> maestro -> file -> proposal -> generate */
-  var Q_FILE_ES = '¿Me pasas el archivo de la tarea? Puedes subirlo, pegarlo, arrastrarlo, decirme su nombre o darme un enlace de Drive.';
-  var Q_FILE_EN = 'Can you send the homework file? You can upload it, paste it, drop it, tell me its name or give me a Drive link.';
-  function profileAsked() { try { return localStorage.getItem('sia-profile-asked') === '1'; } catch (e) { return false; } }
-  function nextProfileStep(s) {
-    if (!profileAsked()) { if (!s.grupo()) return 'grupo'; if (!s.maestro()) return 'maestro'; }
-    return 'file';
-  }
-  function questionFor(step) {
-    if (step === 'grupo') return tr('¿De qué grupo eres? (por ejemplo 3A)', 'Which group are you in? (for example 3A)');
-    if (step === 'maestro') return tr('¿Y quién es tu maestro o maestra? Puedes decir “no sé”.', 'And who is your teacher? You can say “I do not know”.');
-    return tr(Q_FILE_ES, Q_FILE_EN);
-  }
-  function goStep(step, s) {
-    guide.step = step;
-    if (step === 'file') { markProfileAsked(); if (s.fileInfo().length) setTimeout(fileSuggest, 200); }
-    return { type: 'help', value: questionFor(step) };
-  }
-  var SKIP = /^(no se|no sé|ninguno|ninguna|saltar|omitir|paso|skip|none|no tengo|despues|luego|i do not know|i dont know|dont know)$/;
-  function looksLikeCommand(f) {
-    return /^(sube|subir|adjunta|adjuntar|pega|pegar|genera|generar|comparte|compartir|abre|abrir|cambia|cierra|ayuda|help|mis tareas|quiero|pide|pedir|quita|borra|crea|usa|upload|attach|paste|generate|share|open|change|close|remove|clear|create|what|how|como|que|donde|cuantas|ya me)\b/.test(f);
-  }
-  function guidedParse(t, f, s) {
-    if (!guide.step || guide.step === 'choose' || guide.step === 'done') return null;
-    if (looksLikeCommand(f) && guide.step !== 'confirm') return null;
-    if (guide.step === 'intro') {
-      var name = '', rest = t;
-      var gmi = /\b(?:del\s+)?grupo\s+([A-Za-z0-9\-]{1,12})\b/i.exec(rest);
-      var acts = [];
-      if (gmi) { s.setGrupo(gmi[1]); acts.push({ type: 'set_grupo', value: gmi[1] }); rest = rest.replace(gmi[0], ' ').replace(/\s+,/g, ',').trim(); }
-      var nm = /(?:me llamo|mi nombre es|soy|my name is|i am|i'm)\s+([^,.]+)/i.exec(rest);
-      if (nm) name = stripLead(nm[1]);
-      else if (rest.split(/[,.]/).length && rest.length <= 40 && !/tarea|balanza|archivo|homework|file/.test(fold(rest))) name = rest;
-      if (name) rest = rest.replace(nm ? nm[0] : rest, '').replace(/^[\s,.;]+/, '');
-      if (name && name.length >= 2) { name = name.replace(/[.!]+$/, ''); s.setName(name); acts.push({ type: 'set_name', value: name }); }
-      var task = stripLead(rest);
-      var tv = /^(?:traigo|tengo|necesito|quiero|vengo con|vengo por|i have|i need|i want)\s+(?:hacer\s+|elaborar\s+|a\s+)?(.+)$/i.exec(task);
-      if (tv) task = tr('Elabora ', 'Prepare ') + tv[1];
-      if (task && task.length > 6) { s.setPrompt(task); acts.push({ type: 'set_prompt', value: task }); }
-      var nx = nextProfileStep(s);
-      var hello = (name ? tr('Mucho gusto, ' + name + '. ', 'Nice to meet you, ' + name + '. ') : '');
-      var q = goStep(nx, s);
-      q.value = hello + q.value;
-      acts.push(q);
-      return acts;
-    }
-    if (guide.step === 'grupo') {
-      var gv = '';
-      if (!SKIP.test(f)) { gv = stripLead(t.replace(/^(?:mi grupo es|soy del grupo|soy del|es el grupo|grupo|gpo|my group is|group)\s+/i, '')); if (gv.length > 20) gv = ''; }
-      var out = [];
-      if (gv) { s.setGrupo(gv); out.push({ type: 'set_grupo', value: gv }); }
-      out.push(goStep(!s.maestro() && !profileAsked() ? 'maestro' : 'file', s));
-      if (guide.step === 'file') markProfileAsked();
-      return out;
-    }
-    if (guide.step === 'maestro') {
-      var mv = '';
-      if (!SKIP.test(f)) { mv = stripLead(t.replace(/^(?:mi (?:maestro|maestra|profesor|profesora|docente) es|es el maestro|es la maestra|es el|es la|my teacher is|teacher)\s+/i, '')); if (mv.length > 60) mv = ''; }
-      var out2 = [];
-      if (mv) { s.setMaestro(mv); out2.push({ type: 'set_maestro', value: mv }); }
-      out2.push(goStep('file', s));
-      return out2;
-    }
-    if (guide.step === 'file') {
-      if (s.fileInfo().length) {
-        guide.step = 'confirm';
-        var task2 = s.prompt() || '';
-        return [{ type: 'help', value: tr('Ya tengo el archivo. ¿Quieres que elabore' + (task2 ? ': “' + task2 + '”' : ' la tarea') + '?', 'I have the file. Shall I prepare' + (task2 ? ': “' + task2 + '”' : ' the homework') + '?') }];
-      }
-      return null;
-    }
-    if (guide.step === 'confirm' && /^(si|sí|yes|ok|dale|va|hazlo|genera|adelante|go ahead|do it)$/.test(f)) {
-      guide.step = 'done';
-      return [{ type: 'generate' }];
-    }
-    return null;
-  }
+  /* ---- guided flow lives in Grok (name -> file -> prompt -> generate); guide.step only feeds the state snapshot */
+  function guidedParse() { return null; }
 
   /* ---- 1 homework left: the panel opens by itself and offers +10 (auto-approved, max 200) */
   var queuedOneLeft = null;
