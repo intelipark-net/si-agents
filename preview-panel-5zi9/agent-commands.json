@@ -1,0 +1,156 @@
+{
+ "_doc": "RunningMan agent panel (LE v0.4.1, verbatim agent.js/agent.css) for SI Agents – Contaduría. Only the image differs (Ix Ajaw). Built-ins are restated here (builtins:false); 'list' (commands / help / what can you do), 'back' and 'menu' are left out so those phrases reach the app's own help and views (one-page app, no suite menu). Everything not matched here goes to agentBackend 'sia-bridge:agent', which sia-agent.js answers in the page: a local es-MX/English parser first (0 tokens), then Grok through the SI Agents Apps Script 'agent' action. No keys or secrets here.",
+ "version": 1,
+ "app": "si-agents",
+ "base": "/si-agents/preview-panel-5zi9/",
+ "agentName": "Running Mayan Woman (Ix Ajaw)",
+ "autoListen": true,
+ "saveVoice": false,
+ "tokenCap": 1000000000,
+ "agentBackend": "sia-bridge:agent",
+ "panelBg": "runner",
+ "panelBgImg": {
+  "mobile": "img/running_mayan_woman_ix_ajaw_mobile.webp",
+  "desktop": "img/running_mayan_woman_ix_ajaw_desktop_fade.webp"
+ },
+ "menuApps": false,
+ "builtins": false,
+ "launcher": "auto",
+ "langSelector": ".lang button[data-lang=\"{lang}\"]",
+ "langKey": "sia-lang",
+ "refreshSelector": "#siaRefresh",
+ "suggest": {
+  "es": [
+   "ayuda",
+   "subir archivos",
+   "escribe el prompt: elabora una balanza de comprobación y explícala",
+   "mi nombre es Valeria",
+   "crea una paleta con fondo verde más oscuro y botones dorados",
+   "cambia la paleta a Caribe Turquesa",
+   "mis tareas",
+   "genera la tarea",
+   "comparte por WhatsApp",
+   "¿cuántas tareas me quedan?",
+   "¿cómo creo mi propia paleta?"
+  ],
+  "en": [
+   "help",
+   "upload files",
+   "set the prompt to: prepare a trial balance and explain it",
+   "my name is Valeria",
+   "create a palette with a darker green background and gold buttons",
+   "switch the palette to Caribe Turquesa",
+   "my homework",
+   "generate the homework",
+   "share on WhatsApp",
+   "how many homework slots are left?",
+   "how do I make my own palette?"
+  ]
+ },
+ "commands": [
+  {
+   "id": "refresh",
+   "label": {
+    "en": "Refresh",
+    "es": "Actualizar"
+   },
+   "phrases": {
+    "en": [
+     "refresh",
+     "refresh the numbers"
+    ],
+    "es": [
+     "actualizar",
+     "actualiza los números"
+    ]
+   },
+   "action": {
+    "type": "refresh"
+   }
+  },
+  {
+   "id": "lang-es",
+   "label": {
+    "en": "Switch to Spanish",
+    "es": "Cambiar a español"
+   },
+   "phrases": {
+    "en": [
+     "switch to spanish",
+     "spanish"
+    ],
+    "es": [
+     "español",
+     "en español"
+    ]
+   },
+   "action": {
+    "type": "lang",
+    "lang": "es"
+   }
+  },
+  {
+   "id": "lang-en",
+   "label": {
+    "en": "Switch to English",
+    "es": "Cambiar a inglés"
+   },
+   "phrases": {
+    "en": [
+     "switch to english",
+     "english"
+    ],
+    "es": [
+     "inglés",
+     "en inglés"
+    ]
+   },
+   "action": {
+    "type": "lang",
+    "lang": "en"
+   }
+  },
+  {
+   "id": "stop",
+   "label": {
+    "en": "Stop talking",
+    "es": "Silencio"
+   },
+   "phrases": {
+    "en": [
+     "stop",
+     "quiet"
+    ],
+    "es": [
+     "silencio",
+     "cállate"
+    ]
+   },
+   "action": {
+    "type": "stop"
+   }
+  },
+  {
+   "id": "close",
+   "label": {
+    "en": "Close Ix Ajaw",
+    "es": "Cerrar Ix Ajaw"
+   },
+   "phrases": {
+    "en": [
+     "close agent",
+     "close ix ajaw",
+     "close"
+    ],
+    "es": [
+     "cerrar agente",
+     "cerrar ix ajaw",
+     "cierra"
+    ]
+   },
+   "action": {
+    "type": "close"
+   }
+  }
+ ]
+}

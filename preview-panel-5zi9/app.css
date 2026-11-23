@@ -1,0 +1,362 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inria+Serif:wght@400;700&family=Poppins:wght@400;500;700;800&family=Roboto+Flex:opsz,wght@8..144,300..700&display=swap');
+/* SI Agents – Contaduría Homework mockups (HIDDEN / local only).
+   Running Mayan Woman panel backgrounds (same slots as the LE RunningMan panel):
+     <900px  running_mayan_woman_ix_ajaw_mobile.webp  (also copied to avatar.png)
+     >=900px running_mayan_woman_ix_ajaw_desktop_fade.webp */
+
+
+
+
+
+
+
+
+
+
+:root{
+  --navy:#00112D;
+  --deep:#002E55;
+  --gold:#CB9A47;
+  --gold-lt:#FECE61;
+  --teal:#0CB3C7;
+  --aqua:#59D4DF;
+  --ocean:#006D95;
+  --white:#FFFFFF;
+  --ink:#E8F4FA;
+  --muted:rgba(255,255,255,.72);
+  --line:rgba(203,154,71,.45);
+  --pad:clamp(16px,3vw,36px);
+  --content:760px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%}
+html{background:var(--navy)}
+body{
+  font-family:"Poppins",system-ui,sans-serif;
+  font-weight:400;
+  color:var(--white);
+  background:var(--navy);
+  line-height:1.45;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Soft circuit-node field; palms and waves stay on the edges only. */
+body::before{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(12,179,199,.16) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 78% 18%, rgba(254,206,97,.12) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 30% 70%, rgba(89,212,223,.12) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 88% 64%, rgba(12,179,199,.12) 0 1.2px, transparent 2px),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,46,85,.8), transparent 60%);
+  background-size:180px 180px, 220px 220px, 200px 200px, 240px 240px, auto;
+}
+
+.edge{position:fixed;pointer-events:none;z-index:1}
+.edge.palm-tl{top:0;left:0;width:min(280px,42vw);height:auto;opacity:.85}
+.edge.palm-tr{top:0;right:0;width:min(260px,38vw);height:auto;opacity:.85;transform:scaleX(-1)}
+.edge.waves{left:0;right:0;bottom:0;width:100%;height:auto;opacity:.95}
+
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column}
+body.panel-open .wrap{padding-right:min(400px,92vw)}
+@media (max-width:520px){
+  body.panel-open .wrap{padding-right:0} /* panel covers the page, same as LE */
+}
+
+/* ----- header ----- */
+.top{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px var(--pad) 10px;
+}
+.brand{display:flex;flex-direction:column;gap:0;min-width:0;flex:1}
+.wordmark{font-family:"Poppins",sans-serif;font-weight:800;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.02em;line-height:1;margin:0;white-space:nowrap}
+.wordmark .si{color:#fff}
+.wordmark .ag{color:var(--gold)}
+.tag{margin:4px 0 0;font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:.01em}
+.tag .kw{color:var(--teal)}
+
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(0,46,85,.72);
+  color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;
+}
+.chip.ok{border-color:rgba(12,179,199,.45)}
+.chip.cap{border-color:rgba(200,67,43,.55);background:rgba(80,14,4,.55);color:#ffd2c8}
+.chip .n{color:var(--gold-lt);font-variant-numeric:tabular-nums}
+
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(0,46,85,.72)}
+.lang button{
+  appearance:none;border:0;background:transparent;color:var(--muted);
+  font:600 12px/1 "Poppins",sans-serif;padding:9px 11px;cursor:pointer;letter-spacing:.06em;
+}
+.lang button[aria-pressed="true"]{background:var(--gold);color:var(--navy)}
+
+.navlink{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid rgba(12,179,199,.45);background:transparent;
+  color:#fff;font:600 12.5px/1 "Poppins",sans-serif;text-decoration:none;white-space:nowrap;
+}
+.navlink[aria-current="page"]{background:rgba(12,179,199,.18);border-color:var(--teal)}
+
+/* ----- gold divider with center diamond ----- */
+.divider{display:flex;align-items:center;gap:10px;padding:0 var(--pad);margin:4px 0 6px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.divider i{width:7px;height:7px;background:var(--gold);transform:rotate(45deg);flex:none;box-shadow:0 0 0 3px var(--navy)}
+
+/* ----- main ----- */
+main{flex:1;width:100%;max-width:calc(var(--content) + var(--pad)*2);margin:0 auto;padding:8px var(--pad) 48px;position:relative;z-index:2}
+
+h1.page{
+  font-family:"Poppins",sans-serif;font-weight:700;font-size:clamp(20px,2.4vw,26px);
+  margin:8px 0 4px;letter-spacing:-.02em;
+}
+.lede{margin:0 0 20px;color:var(--muted);font-size:14.5px}
+
+.grid{display:grid;gap:14px}
+.drop{
+  position:relative;
+  border:1.5px dashed rgba(203,154,71,.55);
+  background:rgba(0,46,85,.55);
+  border-radius:18px;
+  padding:16px 16px 14px;
+  min-height:108px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:border-color .15s, background .15s;
+}
+.drop:hover,.drop:focus-within{border-color:var(--gold-lt);background:rgba(0,46,85,.78)}
+.drop.over{border-color:var(--teal);border-style:solid;background:rgba(12,179,199,.12)}
+.drop-h{display:flex;align-items:flex-start;gap:12px}
+.drop-ico{
+  width:40px;height:40px;border-radius:12px;flex:none;
+  display:grid;place-items:center;
+  background:rgba(12,179,199,.12);border:1px solid rgba(12,179,199,.35);color:var(--aqua);
+}
+.drop-ico svg{width:22px;height:22px}
+.drop h2{margin:0;font-size:15.5px;font-weight:700}
+.drop p.hint{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop textarea{
+  width:100%;min-height:88px;resize:vertical;margin:0;
+  font:400 14.5px/1.45 "Poppins",sans-serif;color:#fff;
+  background:rgba(0,17,45,.45);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:10px 12px;
+}
+.drop textarea::placeholder{color:rgba(255,255,255,.45)}
+.drop textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+
+.files{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
+.filepill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;
+  background:rgba(12,179,199,.14);border:1px solid rgba(12,179,199,.35);color:#fff;
+}
+.filepill.default{background:rgba(203,154,71,.16);border-color:rgba(203,154,71,.5);color:var(--gold-lt)}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.field label{font-size:13px;font-weight:600}
+.field .sub{font-weight:400;color:var(--muted);font-size:12px}
+.field input[type=text]{
+  height:46px;padding:0 14px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,46,85,.55);color:#fff;
+  font:400 15px/1 "Poppins",sans-serif;
+}
+.field input::placeholder{color:rgba(255,255,255,.4)}
+.field input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+
+.cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:18px}
+.cta{
+  appearance:none;border:0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:48px;padding:0 28px;border-radius:999px;
+  background:var(--gold-lt);color:var(--navy);
+  font:700 15.5px/1 "Poppins",sans-serif;
+  box-shadow:0 6px 24px rgba(254,206,97,.22);
+}
+.cta:hover{filter:brightness(1.05)}
+.cta[aria-disabled="true"],.cta.disabled{opacity:.45;pointer-events:none;box-shadow:none}
+.cta.ghost{
+  background:transparent;color:#fff;border:1px solid var(--line);
+  box-shadow:none;font-weight:600;
+}
+.cta.wa{background:#25D366;color:#08351a}
+.cta.sec{background:var(--deep);color:#fff;border:1px solid var(--teal);box-shadow:none}
+
+.fine{font-size:12.5px;color:var(--muted);margin:0}
+
+/* ----- result ----- */
+.pdf-card{
+  background:rgba(0,46,85,.6);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:16px;
+  display:grid;
+  gap:14px;
+}
+@media (min-width:800px){
+  .pdf-card{grid-template-columns:minmax(0,1fr) 280px;align-items:start}
+}
+.pdf-preview{
+  background:var(--navy);
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid rgba(203,154,71,.35);
+  aspect-ratio:8.5/11;
+  max-height:min(70vh,720px);
+  justify-self:center;
+  width:min(100%,420px);
+}
+.pdf-preview img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.pdf-meta h2{margin:0 0 6px;font-size:18px}
+.pdf-meta p{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+.pdf-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+@media (max-width:799px){
+  .pdf-actions{flex-direction:column}
+  .pdf-actions .cta{width:100%}
+}
+
+/* ----- list ----- */
+.list{display:flex;flex-direction:column;gap:10px;padding:0;margin:0;list-style:none}
+.item{
+  display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;
+  padding:14px 16px;border-radius:16px;
+  background:rgba(0,46,85,.55);border:1px solid rgba(255,255,255,.08);
+}
+.item h2{margin:0;font-size:15px;font-weight:700}
+.item .meta{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.item-acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.item-acts a,.item-acts button{
+  appearance:none;border:1px solid rgba(12,179,199,.4);background:transparent;color:#fff;
+  font:600 12px/1 "Poppins",sans-serif;height:32px;padding:0 12px;border-radius:999px;
+  text-decoration:none;display:inline-flex;align-items:center;cursor:pointer;
+}
+.item-acts a.wa{border-color:#25D366;color:#8df0b5}
+
+/* ----- token cap ----- */
+.cap-card{
+  border:1px solid rgba(200,67,43,.45);
+  background:linear-gradient(180deg,rgba(80,14,4,.35),rgba(0,46,85,.65));
+  border-radius:20px;padding:22px 20px 20px;text-align:center;
+  max-width:520px;margin:8px auto 20px;
+}
+.cap-card h1{margin:8px 0 8px;font-size:clamp(20px,2.4vw,26px)}
+.cap-card p{margin:0 0 8px;color:var(--muted);font-size:14.5px}
+.meter-big{font-variant-numeric:tabular-nums;font-weight:800;font-size:28px;color:var(--gold-lt);margin:4px 0 12px}
+.connect{
+  margin:18px auto 0;max-width:520px;
+  background:rgba(0,46,85,.55);border:1px solid var(--line);border-radius:18px;padding:18px 16px;
+}
+.connect h2{margin:0 0 6px;font-size:16px}
+.connect p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.connect input{
+  width:100%;height:44px;padding:0 12px;border-radius:12px;margin-bottom:10px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(0,17,45,.45);color:#fff;
+  font:400 14.5px/1 "Poppins",sans-serif;
+}
+
+.banner-ex{
+  display:inline-block;margin:0 0 10px;padding:3px 10px;border-radius:999px;
+  background:rgba(254,206,97,.15);color:var(--gold-lt);
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+
+
+
+
+footer.site{
+  padding:8px var(--pad) 24px;
+  font-size:12px;color:var(--muted);text-align:center;
+}
+
+
+/* Phone header: brand on its own row so SI Agents does not collide with the chips. */
+@media (max-width:600px){
+  .top{flex-direction:column;align-items:stretch;gap:10px}
+  .brand{flex:none}
+  .top-actions{width:100%}
+  .item{grid-template-columns:1fr}
+  .item-acts{justify-content:flex-start}
+  .pdf-preview{width:min(100%,280px);max-height:340px;aspect-ratio:8.5/11}
+  .pdf-card{padding:12px}
+  h1.page{margin:4px 0 4px}
+  .lede{margin:0 0 12px}
+}
+
+
+@media (max-width:390px){
+  .top{padding:12px 14px 8px;gap:10px}
+  .wordmark{font-size:24px}
+  .tag{font-size:11.5px}
+  main{padding:6px 14px 40px}
+  .drop{padding:14px 12px 12px;min-height:96px}
+  .chip{font-size:11.5px;padding:0 10px}
+  .cta{width:100%}
+}
+
+.pdf-actions-top{display:flex;flex-direction:column;gap:8px;margin:10px 0 16px}
+.pdf-actions-top .cta{width:100%}
+@media (min-width:800px){
+  .pdf-actions-top{flex-direction:row;flex-wrap:wrap}
+  .pdf-actions-top .cta{width:auto;flex:1;min-width:160px}
+}
+.pdf-preview iframe{display:block;width:100%;height:100%;border:0;background:#00112D;min-height:280px}
+.pdf-preview{width:100%;max-width:520px;height:min(62vh,640px);max-height:none}
+@media (max-width:799px){
+  .pdf-preview{height:280px;max-width:100%}
+}
+
+.busy{position:fixed;inset:0;z-index:2147483600;background:rgba(0,17,45,.72);display:flex;align-items:center;justify-content:center}
+.busy[hidden]{display:none!important}
+.busy-card{background:#002E55;border:1px solid #CB9A47;color:#FECE61;padding:18px 22px;border-radius:16px;font-weight:700}
+
+.navlink,button.navlink{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid rgba(12,179,199,.45);background:transparent;
+  color:#fff;font:600 12.5px/1 "Poppins",sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;
+}
+#formError{color:#ffd2c8}
+.drop{cursor:pointer}
+.drop textarea,.drop input,.drop .filepill{cursor:auto}
+.filepill{cursor:pointer}
+
+.edge-waves{position:fixed;left:0;right:0;bottom:0;height:90px;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg,transparent,rgba(0,109,149,.35) 40%,rgba(12,179,199,.4) 70%,rgba(89,212,223,.25));
+  clip-path:polygon(0 40%,8% 20%,18% 55%,28% 25%,40% 50%,52% 22%,64% 48%,76% 28%,88% 45%,100% 30%,100% 100%,0 100%)}
+.edge-palms{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.7;
+  background:
+    radial-gradient(ellipse 180px 120px at 0 0, rgba(12,179,199,.18), transparent 70%),
+    radial-gradient(ellipse 180px 120px at 100% 0, rgba(12,179,199,.18), transparent 70%)}
+
+
+/* SI Agents – Verde Selva (Valeria): default app style (Carlos confirmed).
+   Gold and turquoise stay the accents; jungle only tints the page and panels. */
+:root{
+  --jungle-deep:#1A2613;
+  --jungle-moss:#3C4A32;
+  --bg:linear-gradient(180deg,#00112D 0%,#00112D 45%,#0D1C20 75%,#1A2613 100%);
+  --panel:color-mix(in srgb,#002E55 82%,#3C4A32 18%);
+  --panel-solid:#0B334F;
+  --divider-soft:rgba(60,74,50,.65);
+}
+html,body{
+  background:var(--navy);
+  background-image:var(--bg);
+  background-attachment:fixed;
+}
+.chip,.lang{background:color-mix(in srgb,var(--panel) 92%, transparent)}
+.drop,.field input,.pdf-card,.item,.cap-card,.connect,.list-card{
+  background:color-mix(in srgb,var(--panel) 88%, transparent);
+}
+.drop:hover,.drop:focus-within{background:color-mix(in srgb,var(--panel) 96%, transparent)}
+.item{border:1px solid var(--divider-soft)}
+.cta.sec{background:var(--panel-solid)}
+.pdf-frame{background:color-mix(in srgb,var(--panel) 90%, transparent)}
+.preview-fallback{
+  background:linear-gradient(180deg,rgba(80,14,4,.35),color-mix(in srgb,var(--panel) 80%, #1A2613));
+}

@@ -1,0 +1,10 @@
+/* SI Agents preview additions (outside the verbatim LE agent.css): palette chooser + panel drop target. */
+.pal-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pal{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px 6px 8px;border-radius:999px;cursor:pointer;
+  background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);color:var(--white);font:500 13px/1.2 "Poppins",sans-serif}
+.pal .sw{display:inline-flex;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.5)}
+.pal .sw i{display:block;width:12px;height:22px}
+.pal.on{border-color:var(--gold-lt);box-shadow:0 0 0 2px color-mix(in srgb,var(--gold-lt) 55%,transparent)}
+.pal:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.drop[data-kind="palette"]{cursor:default}
+.lea-root.sia-dropping .lea-panel{outline:3px dashed var(--gold-lt,#FECE61);outline-offset:-8px}
