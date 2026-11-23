@@ -43,10 +43,15 @@
               <span class="drop-ico" aria-hidden="true">📄</span>
               <div>
                 <h2 data-i18n="filesH">Archivos de la tarea</h2>
-                <p class="hint" data-i18n="filesHint">Arrastra cualquier formato o tócalo para subir (en el teléfono, usa el selector).</p>
+                <p class="hint" data-i18n="filesHint">Arrastra, pega (Ctrl+V) o toca para subir cualquier formato: Word, Excel, PDF, imágenes, tablas…</p>
               </div>
             </div>
-            <div class="files" id="fileList" aria-live="polite"></div>
+            <div class="files-toolbar">
+              <div class="files" id="fileList" aria-live="polite"></div>
+              <button type="button" class="linkish" id="btnClearFiles" hidden data-i18n="clearAll">Quitar todos</button>
+            </div>
+            <p class="file-note" id="fileNote" role="status" hidden></p>
+            <div class="paste-target" id="filePaste" contenteditable="true" spellcheck="false" data-i18n-ph="pasteHere" aria-label="Pegar archivos o tablas aquí"></div>
             <input type="file" id="fileInput" multiple>
           </div>
           <div class="drop" data-kind="prompt">
@@ -85,9 +90,20 @@
             <span class="sub" data-i18n="nameSub">Si lo dejas vacío, la tarea sale como anónima.</span>
             <input id="sia-name" type="text" data-i18n-ph="namePh" placeholder="Anónimo" autocomplete="name">
           </div>
+          <div class="field">
+            <label for="sia-grupo" data-i18n="grupoL">Tu grupo</label>
+            <span class="sub" data-i18n="grupoSub">Se pregunta una sola vez.</span>
+            <input id="sia-grupo" type="text" data-i18n-ph="grupoPh" placeholder="Ej. 3A" autocomplete="off" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="sia-maestro" data-i18n="maestroL">Tu maestro(a)</label>
+            <span class="sub" data-i18n="maestroSub">Para enviarle el resumen del grupo.</span>
+            <input id="sia-maestro" type="text" data-i18n-ph="maestroPh" placeholder="Nombre del maestro" autocomplete="off" maxlength="80">
+          </div>
           <div class="cta-row">
             <button type="submit" class="cta" id="btnGenerate" data-i18n="cta">Generar tarea</button>
             <p class="fine" id="formError" hidden></p>
+            <p class="fine warn" id="extractWarn" hidden></p>
           </div>
         </form>
       </section>
@@ -127,8 +143,8 @@
       <section id="view-cap" hidden>
         <div class="cap-card">
           <p class="meter-big" id="capBig">10 / 10</p>
-          <h1 data-i18n="capTitle">Llegaste al límite de 10 tareas</h1>
-          <p data-i18n="capLede">Las 10 tareas incluidas se usaron en este navegador. Conecta tu propio agente para seguir con tus tokens.</p>
+          <h1 id="capTitle">Llegaste al límite de 10 tareas</h1>
+          <p id="capLede">Usaste las 10 tareas de este navegador. Pide 10 más (se aprueban al instante) o conecta tu propio agente.</p>
         </div>
         <div class="connect">
           <h2 data-i18n="connectH">Conectar tu propio agente</h2>
@@ -136,8 +152,70 @@
           <input type="password" id="userKey" data-i18n-ph="connectPh" placeholder="xai-…" autocomplete="off" spellcheck="false">
           <div class="cta-row">
             <button type="button" class="cta" id="btnSaveKey" data-i18n="connectCta">Conectar agente</button>
+            <button type="button" class="cta ghost" id="btnRequestMore" data-i18n="requestMore">Pedir más tareas</button>
           </div>
           <p class="fine" id="keyNote" hidden></p>
+          <p class="fine" id="requestNote" hidden></p>
+        </div>
+      </section>
+
+      <!-- ADMIN (gated) -->
+      <section id="view-admin" hidden>
+        <h1 class="page" data-i18n="adminTitle">Directorio (admin)</h1>
+        <p class="lede" data-i18n="adminLede">Importa la lista de estudiantes o maestros desde Excel, CSV, Word, PDF o una lista pegada.</p>
+        <div class="drop" id="adminGate">
+          <label for="adminKey" data-i18n="adminKeyL">Clave de administración</label>
+          <input id="adminKey" type="password" autocomplete="off" spellcheck="false">
+          <div class="cta-row"><button type="button" class="cta" id="btnAdminUnlock" data-i18n="adminUnlock">Entrar</button></div>
+          <p class="fine" id="adminGateNote" hidden></p>
+        </div>
+        <div id="adminBody" hidden>
+          <div class="drop" data-kind="admin-files">
+            <div class="drop-h">
+              <span class="drop-ico" aria-hidden="true">👥</span>
+              <div>
+                <h2 data-i18n="adminFilesH">Archivo o lista</h2>
+                <p class="hint" data-i18n="adminFilesHint">Sube, arrastra o pega la lista. Revisa la vista previa antes de guardar.</p>
+              </div>
+            </div>
+            <div class="files" id="adminFileList"></div>
+            <textarea id="adminPaste" rows="5" data-i18n-ph="adminPastePh" placeholder="Pega aquí una lista…"></textarea>
+            <input type="file" id="adminFileInput" multiple>
+          </div>
+          <div class="cta-row">
+            <button type="button" class="cta" id="btnAdminParse" data-i18n="adminParse">Vista previa</button>
+            <button type="button" class="cta ghost" id="btnAdminSave" data-i18n="adminSave" hidden>Guardar</button>
+          </div>
+          <p class="fine" id="adminNote" hidden></p>
+          <div id="adminPreview" class="admin-preview" hidden></div>
+
+          <div class="drop" id="batchBox">
+            <div class="drop-h">
+              <span class="drop-ico" aria-hidden="true">📬</span>
+              <div>
+                <h2 data-i18n="batchH">Preparar lote para un maestro</h2>
+                <p class="hint" data-i18n="batchLede">Elige grupo o maestro y un rango de fechas.</p>
+              </div>
+            </div>
+            <div class="batch-grid">
+              <label>Grupo <input id="batchGrupo" type="text" maxlength="60"></label>
+              <label>Maestro <input id="batchMaestro" type="text" maxlength="80"></label>
+              <label>Desde <input id="batchFrom" type="date"></label>
+              <label>Hasta <input id="batchTo" type="date"></label>
+            </div>
+            <div class="cta-row"><button type="button" class="cta" id="btnBatchGo" data-i18n="batchGo">Preparar lote</button></div>
+            <p class="fine" id="batchNote" hidden></p>
+            <div id="batchOut" hidden>
+              <p class="fine">PDF: <a id="batchSummary" href="#" target="_blank" rel="noopener"></a></p>
+              <p class="fine">Para: <span id="batchTo2"></span></p>
+              <p class="fine">Asunto: <span id="batchSubject"></span></p>
+              <textarea id="batchBody" rows="8"></textarea>
+              <div class="cta-row"><button type="button" class="cta ghost" id="btnBatchSend" data-i18n="batchSend" hidden>Enviar este borrador</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <button type="button" class="cta ghost" id="btnAdminBack" data-i18n="mainTitle">Nueva tarea</button>
         </div>
       </section>
     </main>
