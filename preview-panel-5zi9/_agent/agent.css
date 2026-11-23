@@ -1,0 +1,142 @@
+/* LE Agent panel ("RunningMan"; shared module for the LongevityExplorer suite). Pairs with /p/_agent/agent.js.
+   Slim right-edge grip + side sheet. Never touches the bottom-left floating Menu (#lxm-root). */
+.lea-root{--lea-navy:#163A5F;--lea-blue:#6EC1E4;--lea-green:#61CE70;--lea-ink:#163A5F;--lea-gray:#54595F;--lea-line:#e6edf1;--lea-red:#c8432b;
+  font-family:"Roboto Flex",Roboto,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--lea-ink);font-size:15px;line-height:1.4;-webkit-text-size-adjust:100%}
+.lea-root *,.lea-root *::before,.lea-root *::after{box-sizing:border-box}
+.lea-root [hidden]{display:none!important}
+.lea-root button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lea-root :focus-visible{outline:3px solid var(--lea-blue);outline-offset:2px}
+
+/* edge grip (v0.4.1: above app layers such as the maximized PaceSetter frame in GymBoss, z 2147483000; below the open panel): no icon, no arrow, no text. A slim pill on the right edge, vertically centred (never meets the bottom-left Menu).
+   The button itself is a transparent 24px x 104px hit area; ::before widens it to 44px+ for touch. */
+.lea-handle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147483002;width:24px;height:104px;padding:0;border:0;background:none;
+  display:flex;align-items:center;justify-content:flex-end;padding-right:3px}
+.lea-handle::before{content:"";position:absolute;top:-6px;bottom:-6px;left:-20px;right:0}
+.lea-grip{display:block;width:6px;height:72px;border-radius:6px;background:var(--lea-navy);box-shadow:0 0 0 1.5px rgba(255,255,255,.85),-1px 1px 6px rgba(22,58,95,.35);
+  opacity:.85;transition:opacity .15s,width .15s,height .15s}
+.lea-handle:hover .lea-grip,.lea-handle:focus-visible .lea-grip{opacity:1;width:8px;height:84px}
+.lea-handle:focus-visible{outline:none}
+.lea-handle:focus-visible .lea-grip{box-shadow:0 0 0 3px var(--lea-blue)}
+.lea-open .lea-handle{opacity:0;pointer-events:none}
+@media (max-width:520px){.lea-handle{height:88px}.lea-grip{width:5px;height:56px}}
+
+/* v0.4.1 visible launcher: a labelled tab under the grip on the same right edge (above app layers, below the open panel).
+   "auto" = only on mouse/trackpad screens (laptops), where an edge swipe does not exist; "always" also on touch screens; "off" never.
+   Navy + white text (11:1) with a white outline so it reads on light and dark pages; never near the bottom-left Menu. */
+.lea-launch{position:fixed;right:0;top:calc(50% + 62px);z-index:2147483002;display:none;flex-direction:column;align-items:center;gap:6px;
+  width:30px;padding:9px 0 10px;border:2px solid #fff;border-right:0;border-radius:12px 0 0 12px;background:var(--lea-navy);color:#fff;
+  box-shadow:-2px 2px 10px rgba(0,0,0,.35);font-size:12.5px;font-weight:700;letter-spacing:.04em;line-height:1}
+.lea-root .lea-launch{color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:12.5px;font-weight:700}
+.lea-launch svg{width:17px;height:17px;flex:none}
+.lea-ltxt{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap}
+.lea-launch:hover{background:#0f2b47}
+.lea-root .lea-launch:focus-visible{outline:3px solid var(--lea-blue);outline-offset:1px}
+.lea-root[data-launcher="always"] .lea-launch{display:flex}
+@media (hover:hover) and (pointer:fine){.lea-root[data-launcher="auto"] .lea-launch{display:flex}}
+.lea-open .lea-launch,.lea-yield .lea-launch,.lea-yield .lea-handle{opacity:0;pointer-events:none}
+
+.lea-back{position:fixed;inset:0;z-index:2147483003;background:rgba(22,58,95,.30);opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s;touch-action:pan-y}
+.lea-open .lea-back{opacity:1;visibility:visible;transition:opacity .2s}
+
+.lea-panel{position:fixed;top:0;right:0;bottom:0;z-index:2147483004;width:min(400px,92vw);background:#fff;border-left:4px solid var(--lea-blue);
+  border-radius:18px 0 0 18px;box-shadow:-8px 0 30px rgba(22,58,95,.22);display:flex;flex-direction:column;
+  transform:translateX(102%);visibility:hidden;transition:transform .22s ease,visibility 0s .22s;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);touch-action:pan-y}
+.lea-open .lea-panel{transform:none;visibility:visible;transition:transform .22s ease}
+@media (prefers-reduced-motion:reduce){.lea-panel,.lea-back,.lea-grip{transition:none!important}.lea-dot{animation:none!important}}
+
+.lea-head{display:flex;align-items:center;gap:8px;padding:14px 12px 8px 16px}
+.lea-head h2{margin:0;flex:1;font-family:"Inria Serif",Georgia,serif;font-weight:700;font-size:22px;color:var(--lea-navy);outline:none}
+.lea-ib{color:var(--lea-navy);width:40px;height:40px;border-radius:12px;border:1px solid var(--lea-line);background:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
+.lea-ib svg{width:20px;height:20px}
+.lea-ib[aria-pressed="true"]{background:#f2f8fb;border-color:var(--lea-blue)}
+
+/* token count: text only, no bar */
+.lea-meter{margin:0 16px 8px;font-size:13px;color:var(--lea-gray);display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.lea-mv{font-variant-numeric:tabular-nums;font-weight:600;color:var(--lea-navy)}
+.lea-mleft{font-size:12px}
+.lea-capmsg{color:var(--lea-red);font-weight:600}
+
+.lea-log{flex:1;min-height:80px;overflow-y:auto;overscroll-behavior:contain;padding:6px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.lea-msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:14.5px;overflow-wrap:anywhere}
+.lea-msg.lea-u{align-self:flex-end;background:var(--lea-navy);color:#fff;border-bottom-right-radius:4px}
+.lea-msg.lea-a{align-self:flex-start;background:#f2f8fb;border:1px solid #d6ebf4;border-bottom-left-radius:4px}
+.lea-msg.lea-err{background:#fdf1ee;border-color:#f3cfc6}
+.lea-msg.lea-okmsg{background:#eefaf0;border-color:#bfe6c6;color:#1d5a2a}
+.lea-msg .lea-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:6px;font-size:10.5px;font-weight:700;letter-spacing:.05em;background:#ffe9a8;color:#5c4400}
+.lea-msg .lea-meta{display:block;margin-top:3px;font-size:11px;color:#4d5a66}
+.lea-msg.lea-u .lea-meta{color:#dbe7ef}
+.lea-msg ol{margin:6px 0 0;padding-left:22px}
+.lea-msg li{margin:2px 0}
+.lea-msg li button,.lea-opts button{border:0;background:none;padding:2px 0;text-align:left;color:var(--lea-navy);text-decoration:underline;text-decoration-color:var(--lea-blue);text-underline-offset:3px}
+.lea-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.lea-opts button{padding:6px 10px;border:1px solid var(--lea-blue);border-radius:999px;text-decoration:none;background:#fff}
+
+/* listening indicator */
+.lea-listen{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:8px 8px 8px 12px;border-radius:14px;background:#fdf1ee;border:1px solid #f3cfc6;color:#8a2a17;font-weight:600;font-size:14px}
+.lea-dot{width:12px;height:12px;border-radius:50%;background:var(--lea-red);flex:none;box-shadow:0 0 0 0 rgba(200,67,43,.5);animation:lea-pulse 1.2s infinite}
+@keyframes lea-pulse{0%{box-shadow:0 0 0 0 rgba(200,67,43,.55)}70%{box-shadow:0 0 0 9px rgba(200,67,43,0)}100%{box-shadow:0 0 0 0 rgba(200,67,43,0)}}
+.lea-ll{flex:1}
+.lea-type{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--lea-navy);background:#fff;color:var(--lea-navy)!important;font-size:13.5px!important;font-weight:600}
+.lea-note{margin:0 16px 6px;font-size:12.5px;color:var(--lea-gray)}
+
+/* input dock + upward prompt list */
+.lea-dock{position:relative}
+.lea-pop{position:absolute;left:12px;right:12px;bottom:calc(100% - 2px);z-index:2;max-height:min(50vh,320px);overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;padding:6px;background:#fff;border:1px solid #cfdde6;border-radius:14px;box-shadow:0 -8px 24px rgba(22,58,95,.22)}
+.lea-pop button{display:block;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:10px;background:none;text-align:left;font-size:15px;color:var(--lea-navy)}
+.lea-pop button+button{border-top:1px solid var(--lea-line);border-radius:0}
+.lea-pop button:hover,.lea-pop button:focus-visible{background:#f2f8fb;outline-offset:-3px}
+.lea-up[aria-expanded="true"]{background:#f2f8fb;border-color:var(--lea-blue)}
+.lea-up[aria-expanded="true"] svg{transform:rotate(180deg)}
+.lea-up svg{transition:transform .15s}
+
+.lea-form{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--lea-line)}
+.lea-form input{flex:1;min-width:0;height:44px;padding:0 12px;border:1px solid #cfdde6;border-radius:12px;font:inherit;font-size:16px;color:var(--lea-ink);background:#fff}
+.lea-form input::placeholder{color:#5f6b76}
+.lea-form input:focus{outline:2px solid var(--lea-blue);outline-offset:0;border-color:var(--lea-blue)}
+.lea-form .lea-ib{width:44px;height:44px}
+.lea-send{background:var(--lea-navy)!important;color:#fff!important;border-color:var(--lea-navy)!important}
+.lea-mic[aria-pressed="true"]{background:var(--lea-red)!important;color:#fff;border-color:var(--lea-red)!important}
+
+.lea-toast{position:fixed;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483002;max-width:min(320px,calc(100vw - 110px));
+  padding:10px 14px;border-radius:14px;background:var(--lea-navy);color:#fff;font-size:14px;box-shadow:0 6px 20px rgba(22,58,95,.3);
+  opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
+.lea-toast.lea-show{opacity:1;transform:none}
+.lea-head h2:focus,.lea-head h2:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
+@media (max-width:520px){.lea-head h2{font-size:20px}}
+
+/* ---- per-app panel background (opt-in: "panelBg":"runner" in agent-commands.json; Marketing Boss only) ----
+   Same running-man photos as the Marketing Boss header, under a LIGHT navy overlay (much lighter than v0.2's .78-.97).
+   Text that sits on the photo gets its own dark translucent backing (title, token count, notes); messages,
+   the listening bar, the prompt list and the input stay light cards. Default apps are unaffected. */
+.lea-bg-runner .lea-panel{background-color:#0d2238;
+  background-image:linear-gradient(to bottom,rgba(9,24,42,.50) 0%,rgba(9,24,42,.18) 16%,rgba(9,24,42,.10) 45%,rgba(9,24,42,.35) 72%,rgba(9,24,42,.62) 100%),
+    var(--lea-bg-m,url("/p/marketing-boss/assets/img/athlete-mobile.webp"));
+  background-size:cover,cover;background-position:center,62% 14%;background-repeat:no-repeat}
+@media (min-width:900px){
+  .lea-bg-runner .lea-panel{
+    background-image:linear-gradient(to bottom,rgba(9,24,42,.48) 0%,rgba(9,24,42,.16) 16%,rgba(9,24,42,.10) 45%,rgba(9,24,42,.35) 72%,rgba(9,24,42,.62) 100%),
+      var(--lea-bg-d,url("/p/marketing-boss/assets/img/athlete-desktop-fade.webp"));
+    background-size:cover,auto 100%;background-position:center,78% top}
+}
+.lea-bg-runner .lea-head h2{flex:0 1 auto;margin-right:auto;color:#fff;padding:3px 12px 4px;border-radius:12px;background:rgba(9,24,42,.66);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.lea-bg-runner .lea-head .lea-ib{background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.6)}
+.lea-bg-runner .lea-meter{color:#e9f2f8}
+.lea-bg-runner .lea-meter>span{padding:3px 10px;border-radius:10px;background:rgba(9,24,42,.70);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.lea-bg-runner .lea-mv{color:#fff}
+.lea-bg-runner .lea-capmsg{color:#ffd2c8;background:rgba(80,14,4,.80)!important}
+.lea-bg-runner .lea-note{align-self:flex-start;padding:5px 10px;border-radius:10px;background:rgba(9,24,42,.74);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.lea-bg-runner .lea-msg.lea-a{background:#f2f8fb}
+.lea-bg-runner .lea-msg.lea-err{background:#fdf1ee}
+.lea-bg-runner .lea-msg.lea-okmsg{background:#eefaf0}
+.lea-bg-runner .lea-msg.lea-u{background:#fff;color:var(--lea-navy);border:1px solid var(--lea-blue)}
+.lea-bg-runner .lea-msg.lea-u .lea-meta{color:#4d5a66}
+.lea-bg-runner .lea-listen{background:#fff6f4;border-color:#f3cfc6}
+.lea-bg-runner .lea-form{border-top-color:transparent;background:linear-gradient(to bottom,rgba(9,24,42,0),rgba(9,24,42,.25))}
+.lea-bg-runner .lea-form .lea-ib{border-color:rgba(255,255,255,.7)}
+.lea-bg-runner .lea-send{background:var(--lea-blue)!important;border-color:var(--lea-blue)!important;color:#0d2238!important}
+.lea-bg-runner .lea-msg li button,.lea-bg-runner .lea-opts button{color:var(--lea-navy)}
+.lea-bg-runner :focus-visible{outline-color:#fff}
+.lea-bg-runner .lea-form input:focus,.lea-bg-runner .lea-pop :focus-visible{outline-color:var(--lea-blue)}
