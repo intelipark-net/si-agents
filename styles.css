@@ -1,0 +1,519 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inria+Serif:wght@400;700&family=Poppins:wght@400;500;700;800&family=Roboto+Flex:opsz,wght@8..144,300..700&display=swap');
+/* SI Agents – Contaduría Homework mockups (HIDDEN / local only).
+   Running Mayan Woman panel backgrounds (same slots as the LE RunningMan panel):
+     <900px  running_mayan_woman_ix_ajaw_mobile.webp  (also copied to avatar.png)
+     >=900px running_mayan_woman_ix_ajaw_desktop_fade.webp */
+
+
+
+
+
+
+
+
+
+
+:root{
+  --navy:#00112D;
+  --deep:#002E55;
+  --gold:#CB9A47;
+  --gold-lt:#FECE61;
+  --teal:#0CB3C7;
+  --aqua:#59D4DF;
+  --ocean:#006D95;
+  --white:#FFFFFF;
+  --ink:#E8F4FA;
+  --muted:rgba(255,255,255,.72);
+  --line:rgba(203,154,71,.45);
+  --pad:clamp(16px,3vw,36px);
+  --content:760px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%}
+html{background:var(--navy)}
+body{
+  font-family:"Poppins",system-ui,sans-serif;
+  font-weight:400;
+  color:var(--white);
+  background:var(--navy);
+  line-height:1.45;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Soft circuit-node field; palms and waves stay on the edges only. */
+body::before{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(12,179,199,.16) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 78% 18%, rgba(254,206,97,.12) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 30% 70%, rgba(89,212,223,.12) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 88% 64%, rgba(12,179,199,.12) 0 1.2px, transparent 2px),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,46,85,.8), transparent 60%);
+  background-size:180px 180px, 220px 220px, 200px 200px, 240px 240px, auto;
+}
+
+.edge{position:fixed;pointer-events:none;z-index:1}
+.edge.palm-tl{top:0;left:0;width:min(280px,42vw);height:auto;opacity:.85}
+.edge.palm-tr{top:0;right:0;width:min(260px,38vw);height:auto;opacity:.85;transform:scaleX(-1)}
+.edge.waves{left:0;right:0;bottom:0;width:100%;height:auto;opacity:.95}
+
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column}
+body.panel-open .wrap{padding-right:min(400px,92vw)}
+@media (max-width:520px){
+  body.panel-open .wrap{padding-right:0} /* panel covers the page, same as LE */
+}
+
+/* ----- header ----- */
+.top{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px var(--pad) 10px;
+}
+.brand{display:flex;flex-direction:column;gap:0;min-width:0;flex:1}
+.wordmark{font-family:"Poppins",sans-serif;font-weight:800;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.02em;line-height:1;margin:0;white-space:nowrap}
+.wordmark .si{color:#fff}
+.wordmark .ag{color:var(--gold)}
+.tag{margin:4px 0 0;font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:.01em}
+.tag .kw{color:var(--teal)}
+
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 12px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(0,46,85,.72);
+  color:#fff;font-size:12.5px;font-weight:600;white-space:nowrap;
+}
+.chip.ok{border-color:rgba(12,179,199,.45)}
+.chip.cap{border-color:rgba(200,67,43,.55);background:rgba(80,14,4,.55);color:#ffd2c8}
+.chip .n{color:var(--gold-lt);font-variant-numeric:tabular-nums}
+
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(0,46,85,.72)}
+.lang button{
+  appearance:none;border:0;background:transparent;color:var(--muted);
+  font:600 12px/1 "Poppins",sans-serif;padding:9px 11px;cursor:pointer;letter-spacing:.06em;
+}
+.lang button[aria-pressed="true"]{background:var(--gold);color:var(--navy)}
+
+.navlink{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid rgba(12,179,199,.45);background:transparent;
+  color:#fff;font:600 12.5px/1 "Poppins",sans-serif;text-decoration:none;white-space:nowrap;
+}
+.navlink[aria-current="page"]{background:rgba(12,179,199,.18);border-color:var(--teal)}
+
+/* ----- gold divider with center diamond ----- */
+.divider{display:flex;align-items:center;gap:10px;padding:0 var(--pad);margin:4px 0 6px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.divider i{width:7px;height:7px;background:var(--gold);transform:rotate(45deg);flex:none;box-shadow:0 0 0 3px var(--navy)}
+
+/* ----- main ----- */
+main{flex:1;width:100%;max-width:calc(var(--content) + var(--pad)*2);margin:0 auto;padding:8px var(--pad) 48px;position:relative;z-index:2}
+
+h1.page{
+  font-family:"Poppins",sans-serif;font-weight:700;font-size:clamp(20px,2.4vw,26px);
+  margin:8px 0 4px;letter-spacing:-.02em;
+}
+.lede{margin:0 0 20px;color:var(--muted);font-size:14.5px}
+
+.grid{display:grid;gap:14px}
+.drop{
+  position:relative;
+  border:1.5px dashed rgba(203,154,71,.55);
+  background:rgba(0,46,85,.55);
+  border-radius:18px;
+  padding:16px 16px 14px;
+  min-height:108px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:border-color .15s, background .15s;
+}
+.drop:hover,.drop:focus-within{border-color:var(--gold-lt);background:rgba(0,46,85,.78)}
+.drop.over{border-color:var(--teal);border-style:solid;background:rgba(12,179,199,.12)}
+.drop-h{display:flex;align-items:flex-start;gap:12px}
+.drop-ico{
+  width:40px;height:40px;border-radius:12px;flex:none;
+  display:grid;place-items:center;
+  background:rgba(12,179,199,.12);border:1px solid rgba(12,179,199,.35);color:var(--aqua);
+}
+.drop-ico svg{width:22px;height:22px}
+.drop h2{margin:0;font-size:15.5px;font-weight:700}
+.drop p.hint{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop textarea{
+  width:100%;min-height:88px;resize:vertical;margin:0;
+  font:400 14.5px/1.45 "Poppins",sans-serif;color:#fff;
+  background:rgba(0,17,45,.45);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:10px 12px;
+}
+.drop textarea::placeholder{color:rgba(255,255,255,.45)}
+.drop textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+
+.files{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
+.filepill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;
+  background:rgba(12,179,199,.14);border:1px solid rgba(12,179,199,.35);color:#fff;
+}
+.filepill.default{background:rgba(203,154,71,.16);border-color:rgba(203,154,71,.5);color:var(--gold-lt)}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.field label{font-size:13px;font-weight:600}
+.field .sub{font-weight:400;color:var(--muted);font-size:12px}
+.field input[type=text]{
+  height:46px;padding:0 14px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,46,85,.55);color:#fff;
+  font:400 15px/1 "Poppins",sans-serif;
+}
+.field input::placeholder{color:rgba(255,255,255,.4)}
+.field input:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+
+.cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:18px}
+.cta{
+  appearance:none;border:0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:48px;padding:0 28px;border-radius:999px;
+  background:var(--gold-lt);color:var(--navy);
+  font:700 15.5px/1 "Poppins",sans-serif;
+  box-shadow:0 6px 24px rgba(254,206,97,.22);
+}
+.cta:hover{filter:brightness(1.05)}
+.cta[aria-disabled="true"],.cta.disabled{opacity:.45;pointer-events:none;box-shadow:none}
+.cta.ghost{
+  background:transparent;color:#fff;border:1px solid var(--line);
+  box-shadow:none;font-weight:600;
+}
+.cta.wa{background:#25D366;color:#08351a}
+.cta.sec{background:var(--deep);color:#fff;border:1px solid var(--teal);box-shadow:none}
+
+.fine{font-size:12.5px;color:var(--muted);margin:0}
+
+/* ----- result ----- */
+.pdf-card{
+  background:rgba(0,46,85,.6);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:16px;
+  display:grid;
+  gap:14px;
+}
+@media (min-width:800px){
+  .pdf-card{grid-template-columns:minmax(0,1fr) 280px;align-items:start}
+}
+.pdf-preview{
+  background:var(--navy);
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid rgba(203,154,71,.35);
+  aspect-ratio:8.5/11;
+  max-height:min(70vh,720px);
+  justify-self:center;
+  width:min(100%,420px);
+}
+.pdf-preview img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.pdf-meta h2{margin:0 0 6px;font-size:18px}
+.pdf-meta p{margin:0 0 8px;color:var(--muted);font-size:13.5px}
+.pdf-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+@media (max-width:799px){
+  .pdf-actions{flex-direction:column}
+  .pdf-actions .cta{width:100%}
+}
+
+/* ----- list ----- */
+.list{display:flex;flex-direction:column;gap:10px;padding:0;margin:0;list-style:none}
+.item{
+  display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;
+  padding:14px 16px;border-radius:16px;
+  background:rgba(0,46,85,.55);border:1px solid rgba(255,255,255,.08);
+}
+.item h2{margin:0;font-size:15px;font-weight:700}
+.item .meta{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.item-acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.item-acts a,.item-acts button{
+  appearance:none;border:1px solid rgba(12,179,199,.4);background:transparent;color:#fff;
+  font:600 12px/1 "Poppins",sans-serif;height:32px;padding:0 12px;border-radius:999px;
+  text-decoration:none;display:inline-flex;align-items:center;cursor:pointer;
+}
+.item-acts a.wa{border-color:#25D366;color:#8df0b5}
+
+/* ----- token cap ----- */
+.cap-card{
+  border:1px solid rgba(200,67,43,.45);
+  background:linear-gradient(180deg,rgba(80,14,4,.35),rgba(0,46,85,.65));
+  border-radius:20px;padding:22px 20px 20px;text-align:center;
+  max-width:520px;margin:8px auto 20px;
+}
+.cap-card h1{margin:8px 0 8px;font-size:clamp(20px,2.4vw,26px)}
+.cap-card p{margin:0 0 8px;color:var(--muted);font-size:14.5px}
+.meter-big{font-variant-numeric:tabular-nums;font-weight:800;font-size:28px;color:var(--gold-lt);margin:4px 0 12px}
+.connect{
+  margin:18px auto 0;max-width:520px;
+  background:rgba(0,46,85,.55);border:1px solid var(--line);border-radius:18px;padding:18px 16px;
+}
+.connect h2{margin:0 0 6px;font-size:16px}
+.connect p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.connect input{
+  width:100%;height:44px;padding:0 12px;border-radius:12px;margin-bottom:10px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(0,17,45,.45);color:#fff;
+  font:400 14.5px/1 "Poppins",sans-serif;
+}
+
+.banner-ex{
+  display:inline-block;margin:0 0 10px;padding:3px 10px;border-radius:999px;
+  background:rgba(254,206,97,.15);color:var(--gold-lt);
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+
+
+
+
+footer.site{
+  padding:8px var(--pad) 24px;
+  font-size:12px;color:var(--muted);text-align:center;
+}
+
+
+/* Phone header: brand on its own row so SI Agents does not collide with the chips. */
+@media (max-width:600px){
+  .top{flex-direction:column;align-items:stretch;gap:10px}
+  .brand{flex:none}
+  .top-actions{width:100%}
+  .item{grid-template-columns:1fr}
+  .item-acts{justify-content:flex-start}
+  .pdf-preview{width:min(100%,280px);max-height:340px;aspect-ratio:8.5/11}
+  .pdf-card{padding:12px}
+  h1.page{margin:4px 0 4px}
+  .lede{margin:0 0 12px}
+}
+
+/* Headless Chrome does not match (hover:hover) and (pointer:fine); show the v0.4.1 launcher on laptop widths anyway. */
+@media (min-width:900px){
+  .lea-root[data-launcher="auto"] .lea-launch{display:flex}
+}
+
+@media (max-width:390px){
+  .top{padding:12px 14px 8px;gap:10px}
+  .wordmark{font-size:24px}
+  .tag{font-size:11.5px}
+  main{padding:6px 14px 40px}
+  .drop{padding:14px 12px 12px;min-height:96px}
+  .chip{font-size:11.5px;padding:0 10px}
+  .cta{width:100%}
+}
+
+/* LE Agent panel ("RunningMan"; shared module for the LongevityExplorer suite). Pairs with /p/_agent/agent.js.
+   Slim right-edge grip + side sheet. Never touches the bottom-left floating Menu (#lxm-root). */
+.lea-root{--lea-navy:#163A5F;--lea-blue:#6EC1E4;--lea-green:#61CE70;--lea-ink:#163A5F;--lea-gray:#54595F;--lea-line:#e6edf1;--lea-red:#c8432b;
+  font-family:"Roboto Flex",Roboto,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--lea-ink);font-size:15px;line-height:1.4;-webkit-text-size-adjust:100%}
+.lea-root *,.lea-root *::before,.lea-root *::after{box-sizing:border-box}
+.lea-root [hidden]{display:none!important}
+.lea-root button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lea-root :focus-visible{outline:3px solid var(--lea-blue);outline-offset:2px}
+
+/* edge grip (v0.4.1: above app layers such as the maximized PaceSetter frame in GymBoss, z 2147483000; below the open panel): no icon, no arrow, no text. A slim pill on the right edge, vertically centred (never meets the bottom-left Menu).
+   The button itself is a transparent 24px x 104px hit area; ::before widens it to 44px+ for touch. */
+.lea-handle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147483002;width:24px;height:104px;padding:0;border:0;background:none;
+  display:flex;align-items:center;justify-content:flex-end;padding-right:3px}
+.lea-handle::before{content:"";position:absolute;top:-6px;bottom:-6px;left:-20px;right:0}
+.lea-grip{display:block;width:6px;height:72px;border-radius:6px;background:var(--lea-navy);box-shadow:0 0 0 1.5px rgba(255,255,255,.85),-1px 1px 6px rgba(22,58,95,.35);
+  opacity:.85;transition:opacity .15s,width .15s,height .15s}
+.lea-handle:hover .lea-grip,.lea-handle:focus-visible .lea-grip{opacity:1;width:8px;height:84px}
+.lea-handle:focus-visible{outline:none}
+.lea-handle:focus-visible .lea-grip{box-shadow:0 0 0 3px var(--lea-blue)}
+.lea-open .lea-handle{opacity:0;pointer-events:none}
+@media (max-width:520px){.lea-handle{height:88px}.lea-grip{width:5px;height:56px}}
+
+/* v0.4.1 visible launcher: a labelled tab under the grip on the same right edge (above app layers, below the open panel).
+   "auto" = only on mouse/trackpad screens (laptops), where an edge swipe does not exist; "always" also on touch screens; "off" never.
+   Navy + white text (11:1) with a white outline so it reads on light and dark pages; never near the bottom-left Menu. */
+.lea-launch{position:fixed;right:0;top:calc(50% + 62px);z-index:2147483002;display:none;flex-direction:column;align-items:center;gap:6px;
+  width:30px;padding:9px 0 10px;border:2px solid #fff;border-right:0;border-radius:12px 0 0 12px;background:var(--lea-navy);color:#fff;
+  box-shadow:-2px 2px 10px rgba(0,0,0,.35);font-size:12.5px;font-weight:700;letter-spacing:.04em;line-height:1}
+.lea-root .lea-launch{color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:12.5px;font-weight:700}
+.lea-launch svg{width:17px;height:17px;flex:none}
+.lea-ltxt{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap}
+.lea-launch:hover{background:#0f2b47}
+.lea-root .lea-launch:focus-visible{outline:3px solid var(--lea-blue);outline-offset:1px}
+.lea-root[data-launcher="always"] .lea-launch{display:flex}
+@media (hover:hover) and (pointer:fine){.lea-root[data-launcher="auto"] .lea-launch{display:flex}}
+.lea-open .lea-launch,.lea-yield .lea-launch,.lea-yield .lea-handle{opacity:0;pointer-events:none}
+
+.lea-back{position:fixed;inset:0;z-index:2147483003;background:rgba(22,58,95,.30);opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s;touch-action:pan-y}
+.lea-open .lea-back{opacity:1;visibility:visible;transition:opacity .2s}
+
+.lea-panel{position:fixed;top:0;right:0;bottom:0;z-index:2147483004;width:min(400px,92vw);background:#fff;border-left:4px solid var(--lea-blue);
+  border-radius:18px 0 0 18px;box-shadow:-8px 0 30px rgba(22,58,95,.22);display:flex;flex-direction:column;
+  transform:translateX(102%);visibility:hidden;transition:transform .22s ease,visibility 0s .22s;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);touch-action:pan-y}
+.lea-open .lea-panel{transform:none;visibility:visible;transition:transform .22s ease}
+@media (prefers-reduced-motion:reduce){.lea-panel,.lea-back,.lea-grip{transition:none!important}.lea-dot{animation:none!important}}
+
+.lea-head{display:flex;align-items:center;gap:8px;padding:14px 12px 8px 16px}
+.lea-head h2{margin:0;flex:1;font-family:"Inria Serif",Georgia,serif;font-weight:700;font-size:22px;color:var(--lea-navy);outline:none}
+.lea-ib{color:var(--lea-navy);width:40px;height:40px;border-radius:12px;border:1px solid var(--lea-line);background:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
+.lea-ib svg{width:20px;height:20px}
+.lea-ib[aria-pressed="true"]{background:#f2f8fb;border-color:var(--lea-blue)}
+
+/* token count: text only, no bar */
+.lea-meter{margin:0 16px 8px;font-size:13px;color:var(--lea-gray);display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.lea-mv{font-variant-numeric:tabular-nums;font-weight:600;color:var(--lea-navy)}
+.lea-mleft{font-size:12px}
+.lea-capmsg{color:var(--lea-red);font-weight:600}
+
+.lea-log{flex:1;min-height:80px;overflow-y:auto;overscroll-behavior:contain;padding:6px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.lea-msg{max-width:88%;padding:8px 12px;border-radius:14px;font-size:14.5px;overflow-wrap:anywhere}
+.lea-msg.lea-u{align-self:flex-end;background:var(--lea-navy);color:#fff;border-bottom-right-radius:4px}
+.lea-msg.lea-a{align-self:flex-start;background:#f2f8fb;border:1px solid #d6ebf4;border-bottom-left-radius:4px}
+.lea-msg.lea-err{background:#fdf1ee;border-color:#f3cfc6}
+.lea-msg.lea-okmsg{background:#eefaf0;border-color:#bfe6c6;color:#1d5a2a}
+.lea-msg .lea-tag{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:6px;font-size:10.5px;font-weight:700;letter-spacing:.05em;background:#ffe9a8;color:#5c4400}
+.lea-msg .lea-meta{display:block;margin-top:3px;font-size:11px;color:#4d5a66}
+.lea-msg.lea-u .lea-meta{color:#dbe7ef}
+.lea-msg ol{margin:6px 0 0;padding-left:22px}
+.lea-msg li{margin:2px 0}
+.lea-msg li button,.lea-opts button{border:0;background:none;padding:2px 0;text-align:left;color:var(--lea-navy);text-decoration:underline;text-decoration-color:var(--lea-blue);text-underline-offset:3px}
+.lea-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.lea-opts button{padding:6px 10px;border:1px solid var(--lea-blue);border-radius:999px;text-decoration:none;background:#fff}
+
+/* listening indicator */
+.lea-listen{display:flex;align-items:center;gap:10px;margin:0 12px 6px;padding:8px 8px 8px 12px;border-radius:14px;background:#fdf1ee;border:1px solid #f3cfc6;color:#8a2a17;font-weight:600;font-size:14px}
+.lea-dot{width:12px;height:12px;border-radius:50%;background:var(--lea-red);flex:none;box-shadow:0 0 0 0 rgba(200,67,43,.5);animation:lea-pulse 1.2s infinite}
+@keyframes lea-pulse{0%{box-shadow:0 0 0 0 rgba(200,67,43,.55)}70%{box-shadow:0 0 0 9px rgba(200,67,43,0)}100%{box-shadow:0 0 0 0 rgba(200,67,43,0)}}
+.lea-ll{flex:1}
+.lea-type{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--lea-navy);background:#fff;color:var(--lea-navy)!important;font-size:13.5px!important;font-weight:600}
+.lea-note{margin:0 16px 6px;font-size:12.5px;color:var(--lea-gray)}
+
+/* input dock + upward prompt list */
+.lea-dock{position:relative}
+.lea-pop{position:absolute;left:12px;right:12px;bottom:calc(100% - 2px);z-index:2;max-height:min(50vh,320px);overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;padding:6px;background:#fff;border:1px solid #cfdde6;border-radius:14px;box-shadow:0 -8px 24px rgba(22,58,95,.22)}
+.lea-pop button{display:block;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:10px;background:none;text-align:left;font-size:15px;color:var(--lea-navy)}
+.lea-pop button+button{border-top:1px solid var(--lea-line);border-radius:0}
+.lea-pop button:hover,.lea-pop button:focus-visible{background:#f2f8fb;outline-offset:-3px}
+.lea-up[aria-expanded="true"]{background:#f2f8fb;border-color:var(--lea-blue)}
+.lea-up[aria-expanded="true"] svg{transform:rotate(180deg)}
+.lea-up svg{transition:transform .15s}
+
+.lea-form{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--lea-line)}
+.lea-form input{flex:1;min-width:0;height:44px;padding:0 12px;border:1px solid #cfdde6;border-radius:12px;font:inherit;font-size:16px;color:var(--lea-ink);background:#fff}
+.lea-form input::placeholder{color:#5f6b76}
+.lea-form input:focus{outline:2px solid var(--lea-blue);outline-offset:0;border-color:var(--lea-blue)}
+.lea-form .lea-ib{width:44px;height:44px}
+.lea-send{background:var(--lea-navy)!important;color:#fff!important;border-color:var(--lea-navy)!important}
+.lea-mic[aria-pressed="true"]{background:var(--lea-red)!important;color:#fff;border-color:var(--lea-red)!important}
+
+.lea-toast{position:fixed;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483002;max-width:min(320px,calc(100vw - 110px));
+  padding:10px 14px;border-radius:14px;background:var(--lea-navy);color:#fff;font-size:14px;box-shadow:0 6px 20px rgba(22,58,95,.3);
+  opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
+.lea-toast.lea-show{opacity:1;transform:none}
+.lea-head h2:focus,.lea-head h2:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
+@media (max-width:520px){.lea-head h2{font-size:20px}}
+
+/* ---- per-app panel background (opt-in: "panelBg":"runner" in agent-commands.json; Marketing Boss only) ----
+   Same running-man photos as the Marketing Boss header, under a LIGHT navy overlay (much lighter than v0.2's .78-.97).
+   Text that sits on the photo gets its own dark translucent backing (title, token count, notes); messages,
+   the listening bar, the prompt list and the input stay light cards. Default apps are unaffected. */
+.lea-bg-runner .lea-panel{background-color:#0d2238;
+  background-image:linear-gradient(to bottom,rgba(9,24,42,.50) 0%,rgba(9,24,42,.18) 16%,rgba(9,24,42,.10) 45%,rgba(9,24,42,.35) 72%,rgba(9,24,42,.62) 100%),
+    var(--lea-bg-m,url("img/running_mayan_woman_ix_ajaw_mobile.webp"));
+  background-size:cover,cover;background-position:center,62% 14%;background-repeat:no-repeat}
+@media (min-width:900px){
+  .lea-bg-runner .lea-panel{
+    background-image:linear-gradient(to bottom,rgba(9,24,42,.48) 0%,rgba(9,24,42,.16) 16%,rgba(9,24,42,.10) 45%,rgba(9,24,42,.35) 72%,rgba(9,24,42,.62) 100%),
+      var(--lea-bg-d,url("img/running_mayan_woman_ix_ajaw_desktop_fade.webp"));
+    background-size:cover,auto 100%;background-position:center,78% top}
+}
+.lea-bg-runner .lea-head h2{flex:0 1 auto;margin-right:auto;color:#fff;padding:3px 12px 4px;border-radius:12px;background:rgba(9,24,42,.66);
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.lea-bg-runner .lea-head .lea-ib{background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.6)}
+.lea-bg-runner .lea-meter{color:#e9f2f8}
+.lea-bg-runner .lea-meter>span{padding:3px 10px;border-radius:10px;background:rgba(9,24,42,.70);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.lea-bg-runner .lea-mv{color:#fff}
+.lea-bg-runner .lea-capmsg{color:#ffd2c8;background:rgba(80,14,4,.80)!important}
+.lea-bg-runner .lea-note{align-self:flex-start;padding:5px 10px;border-radius:10px;background:rgba(9,24,42,.74);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.lea-bg-runner .lea-msg.lea-a{background:#f2f8fb}
+.lea-bg-runner .lea-msg.lea-err{background:#fdf1ee}
+.lea-bg-runner .lea-msg.lea-okmsg{background:#eefaf0}
+.lea-bg-runner .lea-msg.lea-u{background:#fff;color:var(--lea-navy);border:1px solid var(--lea-blue)}
+.lea-bg-runner .lea-msg.lea-u .lea-meta{color:#4d5a66}
+.lea-bg-runner .lea-listen{background:#fff6f4;border-color:#f3cfc6}
+.lea-bg-runner .lea-form{border-top-color:transparent;background:linear-gradient(to bottom,rgba(9,24,42,0),rgba(9,24,42,.25))}
+.lea-bg-runner .lea-form .lea-ib{border-color:rgba(255,255,255,.7)}
+.lea-bg-runner .lea-send{background:var(--lea-blue)!important;border-color:var(--lea-blue)!important;color:#0d2238!important}
+.lea-bg-runner .lea-msg li button,.lea-bg-runner .lea-opts button{color:var(--lea-navy)}
+.lea-bg-runner :focus-visible{outline-color:#fff}
+.lea-bg-runner .lea-form input:focus,.lea-bg-runner .lea-pop :focus-visible{outline-color:var(--lea-blue)}
+
+
+/* Official Running Mayan Woman slots */
+.lea-root.lea-bg-runner{
+  --lea-bg-m:url("img/running_mayan_woman_ix_ajaw_mobile.webp");
+  --lea-bg-d:url("img/running_mayan_woman_ix_ajaw_desktop_fade.webp");
+}
+.lea-bg-runner .lea-head h2{max-width:calc(100% - 72px);font-size:16px;line-height:1.2}
+.lea-name{display:inline-block}
+
+.pdf-actions-top{display:flex;flex-direction:column;gap:8px;margin:10px 0 16px}
+.pdf-actions-top .cta{width:100%}
+@media (min-width:800px){
+  .pdf-actions-top{flex-direction:row;flex-wrap:wrap}
+  .pdf-actions-top .cta{width:auto;flex:1;min-width:160px}
+}
+.pdf-preview iframe{display:block;width:100%;height:100%;border:0;background:#00112D;min-height:280px}
+.pdf-preview{width:100%;max-width:520px;height:min(62vh,640px);max-height:none}
+@media (max-width:799px){
+  .pdf-preview{height:280px;max-width:100%}
+}
+
+.busy{position:fixed;inset:0;z-index:2147483600;background:rgba(0,17,45,.72);display:flex;align-items:center;justify-content:center}
+.busy[hidden]{display:none!important}
+.busy-card{background:#002E55;border:1px solid #CB9A47;color:#FECE61;padding:18px 22px;border-radius:16px;font-weight:700}
+
+.navlink,button.navlink{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;border-radius:999px;
+  border:1px solid rgba(12,179,199,.45);background:transparent;
+  color:#fff;font:600 12.5px/1 "Poppins",sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer;
+}
+#formError{color:#ffd2c8}
+.drop{cursor:pointer}
+.drop textarea,.drop input,.drop .filepill{cursor:auto}
+.filepill{cursor:pointer}
+
+.edge-waves{position:fixed;left:0;right:0;bottom:0;height:90px;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg,transparent,rgba(0,109,149,.35) 40%,rgba(12,179,199,.4) 70%,rgba(89,212,223,.25));
+  clip-path:polygon(0 40%,8% 20%,18% 55%,28% 25%,40% 50%,52% 22%,64% 48%,76% 28%,88% 45%,100% 30%,100% 100%,0 100%)}
+.edge-palms{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.7;
+  background:
+    radial-gradient(ellipse 180px 120px at 0 0, rgba(12,179,199,.18), transparent 70%),
+    radial-gradient(ellipse 180px 120px at 100% 0, rgba(12,179,199,.18), transparent 70%)}
+
+.lea-send{font-size:18px}
+
+/* SI Agents – Verde Selva (Valeria): default app style (Carlos confirmed).
+   Gold and turquoise stay the accents; jungle only tints the page and panels. */
+:root{
+  --jungle-deep:#1A2613;
+  --jungle-moss:#3C4A32;
+  --bg:linear-gradient(180deg,#00112D 0%,#00112D 45%,#0D1C20 75%,#1A2613 100%);
+  --panel:color-mix(in srgb,#002E55 82%,#3C4A32 18%);
+  --panel-solid:#0B334F;
+  --divider-soft:rgba(60,74,50,.65);
+}
+html,body{
+  background:var(--navy);
+  background-image:var(--bg);
+  background-attachment:fixed;
+}
+.chip,.lang{background:color-mix(in srgb,var(--panel) 92%, transparent)}
+.drop,.field input,.pdf-card,.item,.cap-card,.connect,.list-card{
+  background:color-mix(in srgb,var(--panel) 88%, transparent);
+}
+.drop:hover,.drop:focus-within{background:color-mix(in srgb,var(--panel) 96%, transparent)}
+.item{border:1px solid var(--divider-soft)}
+.cta.sec{background:var(--panel-solid)}
+.pdf-frame{background:color-mix(in srgb,var(--panel) 90%, transparent)}
+.preview-fallback{
+  background:linear-gradient(180deg,rgba(80,14,4,.35),color-mix(in srgb,var(--panel) 80%, #1A2613));
+}

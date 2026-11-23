@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <base href="/si-agents/">
+  <title>SI Agents – Tareas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- palms via CSS background or inline SVG in Styles; keep a hook -->
+  <div class="edge-palms" aria-hidden="true"></div>
+  <div class="edge-waves" aria-hidden="true"></div>
+
+  <div class="wrap" id="app">
+    <header class="top">
+      <div class="brand">
+        <p class="wordmark"><span class="si">SI</span> <span class="ag">Agents</span></p>
+        <p class="tag" data-i18n="sub" data-i18n-html>Tareas de <span class="kw">Contaduría</span> · UT Tulum</p>
+      </div>
+      <div class="top-actions">
+        <span class="chip ok" id="meterChip"><span class="n" id="meterLabel">0 / 10 tareas</span></span>
+        <div class="lang" role="group" aria-label="Idioma">
+          <button type="button" data-lang="es" aria-pressed="true">ES</button>
+          <button type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <button type="button" class="navlink" id="btnTareas" data-i18n="tareas">Mis tareas</button>
+      </div>
+    </header>
+    <div class="divider" aria-hidden="true"><i></i></div>
+
+    <main>
+      <!-- MAIN -->
+      <section id="view-main">
+        <h1 class="page" data-i18n="mainTitle">Nueva tarea</h1>
+        <p class="lede" data-i18n="lede">Sube los archivos, escribe el prompt y elige el estilo. El agente arma un PDF listo para compartir.</p>
+        <form class="grid" id="formMain" action="javascript:void(0)">
+          <div class="drop" data-kind="files">
+            <div class="drop-h">
+              <span class="drop-ico" aria-hidden="true">📄</span>
+              <div>
+                <h2 data-i18n="filesH">Archivos de la tarea</h2>
+                <p class="hint" data-i18n="filesHint">Arrastra cualquier formato o tócalo para subir (en el teléfono, usa el selector).</p>
+              </div>
+            </div>
+            <div class="files" id="fileList" aria-live="polite"></div>
+            <input type="file" id="fileInput" multiple>
+          </div>
+          <div class="drop" data-kind="prompt">
+            <div class="drop-h">
+              <span class="drop-ico" aria-hidden="true">💬</span>
+              <div>
+                <h2 data-i18n="promptH">Prompt</h2>
+                <p class="hint" data-i18n="promptHint">Describe lo que debe hacer el agente con esos archivos.</p>
+              </div>
+            </div>
+            <textarea id="prompt" data-i18n-ph="promptPh" placeholder="Ejemplo: elabora una balanza de comprobación a partir de los asientos y explícala en un párrafo."></textarea>
+          </div>
+          <div class="drop" data-kind="style">
+            <div class="drop-h">
+              <span class="drop-ico" aria-hidden="true">✦</span>
+              <div>
+                <h2 data-i18n="styleH">Hoja de estilo</h2>
+                <p class="hint" data-i18n="styleHint">Por defecto se usa SI Agents – Verde Selva (Valeria). Puedes sustituirla arrastrando otra hoja.</p>
+              </div>
+            </div>
+            <div class="files"><span class="filepill default" data-i18n="styleDefault" id="stylePill">SI Agents – Verde Selva (Valeria)</span></div>
+            <input type="file" id="styleInput" accept=".pdf,.css,.doc,.docx,.txt">
+          </div>
+          <div class="field">
+            <label for="sia-name" data-i18n="nameL">Tu nombre (opcional)</label>
+            <span class="sub" data-i18n="nameSub">Si lo dejas vacío, la tarea sale como anónima.</span>
+            <input id="sia-name" type="text" data-i18n-ph="namePh" placeholder="Anónimo" autocomplete="name">
+          </div>
+          <div class="cta-row">
+            <button type="submit" class="cta" id="btnGenerate" data-i18n="cta">Generar tarea</button>
+            <p class="fine" id="formError" hidden></p>
+          </div>
+        </form>
+      </section>
+
+      <!-- RESULT -->
+      <section id="view-result" hidden>
+        <h1 class="page" data-i18n="resultTitle">Tu PDF está listo</h1>
+        <p class="lede" id="resultLede"></p>
+        <div class="pdf-actions pdf-actions-top">
+          <a class="cta" id="btnDownload" href="#" target="_blank" rel="noopener" data-i18n="download">Descargar PDF</a>
+          <a class="cta wa" id="btnWa" href="#" target="_blank" rel="noopener" data-i18n="share">Compartir por WhatsApp</a>
+          <button type="button" class="cta ghost" id="btnNewFromResult" data-i18n="mainTitle">Nueva tarea</button>
+        </div>
+        <div class="pdf-card">
+          <div class="pdf-preview">
+            <iframe id="pdfFrame" title="Vista previa del PDF"></iframe>
+          </div>
+          <div class="pdf-meta">
+            <h2 id="resultTitle"></h2>
+            <p id="resultMeta"></p>
+            <p class="fine" id="resultName"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIST -->
+      <section id="view-list" hidden>
+        <h1 class="page" data-i18n="listTitle">Mis tareas</h1>
+        <p class="lede" data-i18n="listLede">PDFs hechos en este navegador.</p>
+        <ul class="list" id="hwList"></ul>
+        <div class="cta-row">
+          <button type="button" class="cta ghost" id="btnNewFromList" data-i18n="mainTitle">Nueva tarea</button>
+        </div>
+      </section>
+
+      <!-- CAP -->
+      <section id="view-cap" hidden>
+        <div class="cap-card">
+          <p class="meter-big" id="capBig">10 / 10</p>
+          <h1 data-i18n="capTitle">Llegaste al límite de 10 tareas</h1>
+          <p data-i18n="capLede">Las 10 tareas incluidas se usaron en este navegador. Conecta tu propio agente para seguir con tus tokens.</p>
+        </div>
+        <div class="connect">
+          <h2 data-i18n="connectH">Conectar tu propio agente</h2>
+          <p data-i18n="connectLede">Pega tu clave de xAI. Se guarda solo en este navegador, no en la base de datos.</p>
+          <input type="password" id="userKey" data-i18n-ph="connectPh" placeholder="xai-…" autocomplete="off" spellcheck="false">
+          <div class="cta-row">
+            <button type="button" class="cta" id="btnSaveKey" data-i18n="connectCta">Conectar agente</button>
+          </div>
+          <p class="fine" id="keyNote" hidden></p>
+        </div>
+      </section>
+    </main>
+    <footer class="site" data-i18n="footer">SI Agents · Contaduría · UT Tulum</footer>
+  </div>
+
+  <div class="lea-root lea-bg-runner" id="lea-root" data-launcher="auto">
+    <button type="button" class="lea-handle" aria-expanded="false" aria-controls="lea-panel" id="leaHandle"><span class="lea-grip" aria-hidden="true"></span></button>
+    <button type="button" class="lea-launch" id="leaLaunch" aria-expanded="false"><span class="lea-run" aria-hidden="true"></span><span class="lea-ltxt">Running Mayan Woman (Ix Ajaw)</span></button>
+    <div class="lea-back" id="leaBack"></div>
+    <aside class="lea-panel" role="dialog" aria-modal="true" id="lea-panel" aria-hidden="true" aria-labelledby="lea-title">
+      <div class="lea-head">
+        <h2 tabindex="-1" id="lea-title"><span class="lea-name">Running Mayan Woman (Ix Ajaw)</span></h2>
+        <button type="button" class="lea-ib lea-x" id="leaClose" aria-label="Cerrar">×</button>
+      </div>
+      <div class="lea-meter" role="status"><span class="lea-mv" id="leaMeter">0 / 10 tareas</span><span class="lea-capmsg" id="leaCap" hidden></span></div>
+      <div class="lea-log"><div class="lea-msg lea-a" id="leaHello">¡Hola! ¿En qué te ayudo?</div></div>
+      <div class="lea-dock">
+        <form class="lea-form" id="leaForm" autocomplete="off">
+          <input type="text" class="lea-in" id="leaInput" data-i18n-ph="inputPh" placeholder="Escribe un comando">
+          <button type="submit" class="lea-ib lea-send" aria-label="Enviar">→</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <div class="busy" id="busy" hidden><div class="busy-card" data-i18n="working">Generando tu tarea…</div></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
