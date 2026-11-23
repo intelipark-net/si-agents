@@ -43,7 +43,7 @@
               <span class="drop-ico" aria-hidden="true">📄</span>
               <div>
                 <h2 data-i18n="filesH">Archivos de la tarea</h2>
-                <p class="hint" data-i18n="filesHint">Arrastra, pega (Ctrl+V) o toca para subir cualquier formato: Word, Excel, PDF, imágenes, tablas…</p>
+                <p class="hint" data-i18n="filesHint">Arrastra el archivo, pégalo en el recuadro o toca Elegir archivo. Cualquier formato: Word, Excel, PDF, imágenes, tablas…</p>
               </div>
             </div>
             <div class="files-toolbar">
@@ -51,8 +51,12 @@
               <button type="button" class="linkish" id="btnClearFiles" hidden data-i18n="clearAll">Quitar todos</button>
             </div>
             <p class="file-note" id="fileNote" role="status" hidden></p>
-            <div class="paste-target" id="filePaste" contenteditable="true" spellcheck="false" data-i18n-ph="pasteHere" aria-label="Pegar archivos o tablas aquí"></div>
-            <input type="file" id="fileInput" multiple>
+            <div class="paste-target is-empty" id="filePaste" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" tabindex="0" autocomplete="off" autocorrect="off" autocapitalize="off" data-i18n-ph="pasteHere" data-placeholder="Mantén presionado aquí y elige Pegar" aria-label="Mantén presionado aquí y elige Pegar"></div>
+            <div class="file-actions">
+              <button type="button" class="file-act" id="btnPaste" data-i18n="pasteBtn">📋 Pegar</button>
+              <button type="button" class="file-act" id="btnChooseFile" data-i18n="chooseFile">📎 Elegir archivo</button>
+            </div>
+            <input type="file" id="fileInput" class="file-input-hidden" multiple>
           </div>
           <div class="drop" data-kind="prompt">
             <div class="drop-h">

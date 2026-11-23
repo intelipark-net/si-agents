@@ -6,7 +6,7 @@
       mainTitle: 'Nueva tarea',
       lede: 'Sube los archivos, escribe el prompt y elige el estilo. El agente arma un PDF listo para compartir.',
       filesH: 'Archivos de la tarea',
-      filesHint: 'Arrastra, pega (Ctrl+V) o toca para subir cualquier formato: Word, Excel, PDF, imágenes, tablas…',
+      filesHint: 'Arrastra el archivo, pégalo en el recuadro o toca Elegir archivo. Cualquier formato: Word, Excel, PDF, imágenes, tablas…',
       promptH: 'Prompt', promptHint: 'Describe lo que debe hacer el agente con esos archivos.',
       promptPh: 'Ejemplo: elabora una balanza de comprobación a partir de los asientos y explícala en un párrafo.',
       styleH: 'Hoja de estilo',
@@ -32,7 +32,10 @@
       errGeneric: 'No se pudo generar la tarea. Inténtalo de nuevo.',
       errCap: 'Llegaste al límite de 10 tareas en este navegador.',
       clearAll: 'Quitar todos', removeFile: 'Quitar', alreadyAttached: 'Ya adjuntado',
-      pasteHere: 'Pega aquí una imagen, un archivo o una tabla',
+      pasteHere: 'Mantén presionado aquí y elige Pegar',
+      pasteBtn: '📋 Pegar', chooseFile: '📎 Elegir archivo',
+      pasteHold: 'Mantén presionado el recuadro y elige Pegar.',
+      pasteEmpty: 'No encontré nada para pegar. Mantén presionado el recuadro y elige Pegar.',
       pastedTable: 'tabla-pegada.tsv', pastedText: 'texto-pegado.txt', pastedImage: 'captura.png',
       fileWarn: 'Algunos archivos pueden no leerse bien: {names}',
       extractWarn: 'Hubo problemas al leer archivos: {names}',
@@ -63,7 +66,7 @@
       mainTitle: 'New homework',
       lede: 'Upload the files, write the prompt and choose a style. The agent builds a PDF ready to share.',
       filesH: 'Homework files',
-      filesHint: 'Drag, paste (Ctrl+V) or tap to upload any format: Word, Excel, PDF, images, tables…',
+      filesHint: 'Drop a file, paste it in the box, or tap Choose file. Any format: Word, Excel, PDF, images, tables…',
       promptH: 'Prompt', promptHint: 'Tell the agent what to do with those files.',
       promptPh: 'Example: prepare a trial balance from the journal entries and explain it in one paragraph.',
       styleH: 'Style sheet',
@@ -89,7 +92,10 @@
       errGeneric: 'Could not generate the homework. Please try again.',
       errCap: 'You have used all 10 homework slots in this browser.',
       clearAll: 'Clear all', removeFile: 'Remove', alreadyAttached: 'Already attached',
-      pasteHere: 'Paste an image, a file or a table here',
+      pasteHere: 'Press and hold here, then choose Paste',
+      pasteBtn: '📋 Paste', chooseFile: '📎 Choose file',
+      pasteHold: 'Press and hold the box, then choose Paste.',
+      pasteEmpty: 'Nothing to paste. Press and hold the box, then choose Paste.',
       pastedTable: 'pasted-table.tsv', pastedText: 'pasted-text.txt', pastedImage: 'screenshot.png',
       fileWarn: 'Some files may not be readable: {names}',
       extractWarn: 'There were problems reading files: {names}',
@@ -155,7 +161,12 @@
       else el.textContent = html;
     });
     document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
-      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+      var ph = t(el.getAttribute('data-i18n-ph'));
+      el.setAttribute('placeholder', ph);
+      if (el.id === 'filePaste') {
+        el.setAttribute('data-placeholder', ph);
+        el.setAttribute('aria-label', ph);
+      }
     });
     document.querySelectorAll('.lang button').forEach(function (b) {
       b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang() ? 'true' : 'false');
@@ -466,43 +477,72 @@
     else if (text && !got.length) got.push(new File([text], t('pastedText'), { type: 'text/plain' }));
     return Promise.resolve(addFiles(got));
   }
+  function imageName(type) {
+    if (type && type.indexOf('jpeg') >= 0) return t('pastedImage').replace(/\.png$/i, '.jpg');
+    if (type && type.indexOf('webp') >= 0) return t('pastedImage').replace(/\.png$/i, '.webp');
+    if (type && type.indexOf('gif') >= 0) return t('pastedImage').replace(/\.png$/i, '.gif');
+    return t('pastedImage');
+  }
+  function filesFromClipboardItems(items) {
+    items = items || [];
+    var jobs = [];
+    items.forEach(function (item) {
+      var types = item.types || [];
+      var hasHtml = types.indexOf('text/html') >= 0;
+      var hasFile = types.some(function (tp) { return tp.indexOf('image/') === 0 || (tp !== 'text/html' && tp !== 'text/plain' && tp !== 'text/uri-list'); });
+      types.forEach(function (type) {
+        if (type === 'text/plain' && (hasHtml || hasFile)) return;
+        if (type === 'text/uri-list') return;
+        jobs.push(item.getType(type).then(function (blob) {
+          if (type === 'text/html') {
+            return blob.text().then(function (html) {
+              var tsv = htmlTableToTsv(html);
+              return tsv ? new File([tsv], t('pastedTable'), { type: 'text/tab-separated-values' }) : null;
+            });
+          }
+          if (type.indexOf('image/') === 0) return new File([blob], imageName(type), { type: type });
+          if (type === 'text/plain') {
+            return blob.text().then(function (text) {
+              return text ? new File([text], t('pastedText'), { type: 'text/plain' }) : null;
+            });
+          }
+          var ext = (type.split('/')[1] || 'bin').replace(/[^a-z0-9]+/gi, '');
+          return new File([blob], 'pegado.' + ext, { type: type });
+        }).catch(function () { return null; }));
+      });
+    });
+    return Promise.all(jobs).then(function (list) { return list.filter(Boolean); });
+  }
+  function fallbackReadText() {
+    if (!navigator.clipboard || !navigator.clipboard.readText) return Promise.resolve({ added: 0, dup: 0, empty: true });
+    return navigator.clipboard.readText().then(function (text) {
+      if (!text) return { added: 0, dup: 0, empty: true };
+      return addFiles([new File([text], t('pastedText'), { type: 'text/plain' })]);
+    });
+  }
   function pasteFromClipboard() {
+    var run;
     if (navigator.clipboard && navigator.clipboard.read) {
-      return navigator.clipboard.read().then(function (items) {
-        var jobs = [];
-        items.forEach(function (item) {
-          item.types.forEach(function (type) {
-            jobs.push(item.getType(type).then(function (blob) {
-              var name = type.indexOf('image/') === 0 ? t('pastedImage').replace('.png', type.indexOf('jpeg') >= 0 ? '.jpg' : '.png')
-                : type === 'text/html' ? 'paste.html' : t('pastedText');
-              if (type === 'text/html') {
-                return blob.text().then(function (html) {
-                  var tsv = htmlTableToTsv(html);
-                  return tsv ? new File([tsv], t('pastedTable'), { type: 'text/tab-separated-values' }) : null;
-                });
-              }
-              return new File([blob], name, { type: type });
-            }));
-          });
+      run = navigator.clipboard.read().then(function (items) {
+        return filesFromClipboardItems(items).then(function (list) {
+          if (list.length) return addFiles(list);
+          return fallbackReadText();
         });
-        return Promise.all(jobs).then(function (list) { return addFiles(list.filter(Boolean)); });
-      }).catch(function () {
-        if (navigator.clipboard.readText) {
-          return navigator.clipboard.readText().then(function (text) {
-            if (!text) return { added: 0, dup: 0 };
-            return addFiles([new File([text], t('pastedText'), { type: 'text/plain' })]);
-          });
-        }
-        return { added: 0, dup: 0 };
-      });
+      }).catch(function () { return fallbackReadText(); });
+    } else {
+      run = fallbackReadText();
     }
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      return navigator.clipboard.readText().then(function (text) {
-        if (!text) return { added: 0, dup: 0 };
-        return addFiles([new File([text], t('pastedText'), { type: 'text/plain' })]);
-      });
-    }
-    return Promise.resolve({ added: 0, dup: 0 });
+    return run.catch(function () { return { added: 0, dup: 0, denied: true }; });
+  }
+  function resetPasteTarget() {
+    if (!pasteEl) return;
+    pasteEl.textContent = '';
+    pasteEl.classList.add('is-empty');
+    if (document.activeElement === pasteEl && pasteEl.blur) pasteEl.blur();
+  }
+  function syncPasteEmpty() {
+    if (!pasteEl) return;
+    pasteEl.classList.toggle('is-empty', !String(pasteEl.textContent || '').trim());
   }
   function updateFileWarn() {
     var el = document.getElementById('extractWarn');
@@ -523,13 +563,58 @@
   if (pasteEl) {
     pasteEl.addEventListener('paste', function (e) {
       e.preventDefault();
+      e.stopPropagation();
       ingestClipboardData(e.clipboardData);
-      pasteEl.textContent = '';
+      resetPasteTarget();
+    });
+    pasteEl.addEventListener('input', syncPasteEmpty);
+    pasteEl.addEventListener('blur', function () { pasteEl.textContent = ''; syncPasteEmpty(); });
+    pasteEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === 'Return') { e.preventDefault(); }
+    });
+    pasteEl.addEventListener('drop', function (e) { e.preventDefault(); });
+  }
+  var btnPaste = document.getElementById('btnPaste');
+  if (btnPaste) btnPaste.addEventListener('click', function (e) {
+    e.preventDefault();
+    pasteFromClipboard().then(function (r) {
+      resetPasteTarget();
+      if (r && r.denied) showFileNote(t('pasteHold'));
+      else if (!r || (!r.added && !r.dup)) showFileNote(t('pasteEmpty'));
+    }).catch(function () {
+      resetPasteTarget();
+      if (pasteEl) pasteEl.focus();
+      showFileNote(t('pasteHold'));
+    });
+  });
+  var btnChoose = document.getElementById('btnChooseFile');
+  if (btnChoose) btnChoose.addEventListener('click', function (e) {
+    e.preventDefault();
+    try { fileInput.click(); } catch (err) {}
+  });
+  var filesDrop = document.querySelector('.drop[data-kind="files"]');
+  if (filesDrop) {
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      filesDrop.addEventListener(ev, function (e) {
+        if (!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        filesDrop.classList.add('over');
+      });
+    });
+    filesDrop.addEventListener('dragleave', function (e) {
+      if (!filesDrop.contains(e.relatedTarget)) filesDrop.classList.remove('over');
+    });
+    filesDrop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      filesDrop.classList.remove('over');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
     });
   }
   document.addEventListener('paste', function (e) {
     var tEl = e.target;
-    if (tEl && tEl.closest && tEl.closest('textarea, input, .lea-in, #adminPaste, #adminKey, #userKey, #sia-name, #prompt')) return;
+    if (tEl && tEl.closest && tEl.closest('textarea, input, .lea-in, #adminPaste, #adminKey, #userKey, #sia-name, #prompt, #filePaste, .paste-target')) return;
     if (e.clipboardData && ((e.clipboardData.files && e.clipboardData.files.length) || (e.clipboardData.types && Array.prototype.slice.call(e.clipboardData.types).some(function (x) { return /^image\//.test(x) || x === 'Files' || x === 'text/html'; })))) {
       e.preventDefault();
       ingestClipboardData(e.clipboardData);
