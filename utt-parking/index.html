@@ -21,7 +21,7 @@ button{font-size:13px}
 <canvas id="c"></canvas>
 <details class="panel" id="pc" open><summary>Versión y vistas</summary><div class="b">
 <div><button id="vA" class="on">A · Grava</button><button id="vB">B · Concreto</button></div>
-<div style="margin-top:6px"><button data-view="all" class="on" style="font-weight:700">Ver todo</button><button data-view="iso">Isométrica</button><button data-view="top">Planta</button><button data-view="eyeY">Ojo · Amarilla</button><button data-view="eyeD">Ojo · Ascenso</button><button data-view="eyeB">Ojo · Azul</button></div>
+<div style="margin-top:6px"><button data-view="all" style="font-weight:700">Ver todo</button><button data-view="iso">Isométrica</button><button data-view="top" class="on">Planta</button><button data-view="eyeY">Ojo · Amarilla</button><button data-view="eyeD">Ojo · Ascenso</button><button data-view="eyeB">Ojo · Azul</button></div>
 <div class="note">Arrastrar = girar · rueda = zoom · clic derecho = desplazar</div></div></details>
 <details class="panel" id="pr" open><summary>Capas</summary><div class="b"><div id="layers"></div><label><input type="checkbox" id="jS" checked> <b>Selva</b> (existente, sin costo)</label><label>Densidad <input type="range" id="jD" min="10" max="100" value="75" style="width:140px;vertical-align:middle"></label></div></details>
 <details class="panel" id="tt" open><summary>Conteo por modo</summary><div class="b"><table id="cnt"></table><div class="note" id="cost"></div></div></details>
@@ -1648,14 +1648,55 @@ function fitAll(){const asp=innerWidth/innerHeight;cam.aspect=asp;cam.updateProj
     if(!best||D<best.D)best={D,f};});
   cam.position.copy(T.clone().add(best.f.multiplyScalar(best.D)));ctl.target.copy(T);ctl.update();}
 window.uttFit=fitAll;
+// Planta: misma mirada cenital que el preset (cámara arriba, epsilon en Z), distancia ajustada al predio.
+function facilityBB(){
+  let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;
+  const add=(x,z)=>{if(x<x0)x0=x;if(x>x1)x1=x;if(z<z0)z0=z;if(z>z1)z1=z;};
+  const take=r=>{if(r&&typeof r.x0==='number'){add(r.x0,r.y0);add(r.x1,r.y1);}};
+  [G.Y,G.B,G.DROP,G.WAIT,G.BIKES,G.SCOOT,G.PLAZA,G.BLDG,G.APRON,G.DRIVE].forEach(take);
+  Object.values(G.BANDS||{}).forEach(take);
+  Object.values(G.WALKS||{}).forEach(a=>(a||[]).forEach(take));
+  Object.values(G.CROSS||{}).forEach(take);
+  const tn=G.TURN;if(tn){add(tn.cx-tn.r,tn.cy-tn.r);add(tn.cx+tn.r,tn.cy+tn.r);}
+  Object.values(G.BEDS||{}).forEach(pts=>(pts||[]).forEach(p=>add(p[0],p[1])));
+  const zonas=U.buffer&&U.buffer.zonas;if(zonas)Object.values(zonas).forEach(z=>{add(z[0],z[2]);add(z[1],z[3]);});
+  return {x0,x1,z0,z1};
+}
+const FOG0={near:S.fog.near,far:S.fog.far};
+function fogReset(){S.fog.near=FOG0.near;S.fog.far=FOG0.far;}
+function fitPlan(){
+  const b=facilityBB(),W=innerWidth,Hp=Math.max(1,innerHeight),asp=W/Hp;
+  cam.aspect=asp;cam.updateProjectionMatrix();
+  const cx=(b.x0+b.x1)/2,cz=(b.z0+b.z1)/2,halfX=(b.x1-b.x0)/2,halfZ=(b.z1-b.z0)/2,mrg=1.10;
+  const tV=Math.tan(THREE.MathUtils.degToRad(cam.fov/2));
+  const worldX=halfX*mrg,worldZ=halfZ*mrg,az=worldZ/worldX;
+  const Hscreen=Math.max(worldZ/tV,worldX/(tV*asp));
+  const sScreen=worldX*Hp/(2*tV*Hscreen);
+  let s=sScreen;const gap=10;
+  document.querySelectorAll('details.panel').forEach(el=>{
+    const p=el.getBoundingClientRect();if(p.width<2||p.height<2)return;
+    const lim=[];
+    if(p.right<=W/2)lim.push(W/2-p.right-gap);else if(p.left>=W/2)lim.push(p.left-W/2-gap);
+    if(p.bottom<=Hp/2)lim.push((Hp/2-p.bottom-gap)/az);else if(p.top>=Hp/2)lim.push((p.top-Hp/2-gap)/az);
+    const ok=lim.filter(v=>v>8);if(ok.length)s=Math.min(s,Math.max.apply(null,ok));
+  });
+  if(!(s>40))s=sScreen;
+  const H=worldX*Hp/(2*tV*s);
+  // La niebla fija (180–420) lavaría el plano en teléfono, donde la cámara queda más lejos. Se restaura al salir de Planta.
+  S.fog.near=H+50;S.fog.far=H+280;
+  cam.position.set(cx,H,cz+0.02);ctl.target.set(cx,0,cz);ctl.update();
+  window._cur='top';
+}
 const VIEWS={closeAcc:[[13,12,34],[32,0,48]],closeAccB:[[93,12,34],[72,0,48]],closePU:[[16,3.8,62.5],[22.5,0.6,70.2]],closeG:[[16.5,2.2,38],[11.5,0.0,50]],closeP:[[14.5,1.7,49],[11.5,0.8,55]],closeS:[[46,1.7,0.2],[47,1.6,10]],fleet:[[8,4.8,115],[8,0.6,106]],fleetM:[[21.5,2.4,110],[21.5,0.5,105.2]],iso:[[-25,75,125],[55,0,45]],top:[[55,165,48.01],[55,0,48]],eyeY:[[16,1.6,19],[17,1.2,60]],eyeD:[[59,1.7,13.5],[50,1.8,40]],eyeB:[[90,1.6,85],[88,1.5,30]]};
-function view(v){window._cur=(v&&VIEWS[v])?v:'all';if(!v||v==='all'||!VIEWS[v]){fitAll();return;}const p=VIEWS[v];cam.position.set(...p[0]);ctl.target.set(...p[1]);ctl.update();}
+function markView(v){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===v));}
+function view(v){window._follow=false;fogReset();window._cur=(v&&VIEWS[v])?v:'all';markView(window._cur==='all'?'all':v);if(!v||v==='all'||!VIEWS[v]){fitAll();return;}if(v==='top'){fitPlan();return;}const p=VIEWS[v];cam.position.set(...p[0]);ctl.target.set(...p[1]);ctl.update();}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
-function rs(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();if(window._cur==='all')fitAll();}addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeout(rs,250));rs();
+ctl.addEventListener('start',()=>{window._follow=false;});
+function rs(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();if(window._follow)fitPlan();else if(window._cur==='all')fitAll();}addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeout(rs,250));rs();
 if(innerWidth<700)document.querySelectorAll('details.panel').forEach(d=>d.removeAttribute('open'));
 const q=new URLSearchParams(location.search);window._selva=q.get('selva')!=='0';window._dens=parseFloat(q.get('dens')||(innerWidth<700?'0.45':'0.75'));buildJungle(window._dens);
 $('jS').checked=window._selva;$('jD').value=Math.round(window._dens*100);$('jS').onchange=e=>{window._selva=e.target.checked;JG.visible=window._selva;};$('jD').oninput=e=>{window._dens=e.target.value/100;buildJungle(window._dens);};
-setV(q.get('v')||'A');view(q.get('view')||'all');if(q.get('hide'))q.get('hide').split(',').forEach(k=>{if(L[k])L[k].visible=false;});
+setV(q.get('v')||'A');const qv=q.get('view');if(qv)view(qv);else{window._follow=true;fitPlan();markView('top');}if(q.get('hide'))q.get('hide').split(',').forEach(k=>{if(L[k])L[k].visible=false;});
 if(q.get('panels')==='closed')document.querySelectorAll('details').forEach(d=>d.open=false);
 (function loop(){requestAnimationFrame(loop);ctl.update();R.render(S,cam);})();window.uttCam=(a,b,c,d,e,f)=>{cam.position.set(a,b,c);ctl.target.set(d,e,f);ctl.update();R.render(S,cam);};window.uttReady=true;
 })();
